@@ -9,12 +9,13 @@ import { useData } from '../../contexts/DataContext';
 
 
 const RealTimeClock = () => {
-  const [time, setTime] = useState(new Date());
+  const { getNow } = useData();
+  const [time, setTime] = useState(getNow());
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
+    const timer = setInterval(() => setTime(getNow()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [getNow]);
 
   return (
     <div className="text-secondary fw-bold" style={{ fontSize: '0.9rem' }}>
@@ -25,11 +26,12 @@ const RealTimeClock = () => {
 };
 
 const RegistrationStatus = () => {
+  const { getNow } = useData();
   const [status, setStatus] = useState({ isOpen: false, text: 'กำลังตรวจสอบ...' });
 
   useEffect(() => {
     const checkStatus = () => {
-      const now = new Date();
+      const now = getNow();
       const hour = now.getHours();
       const minute = now.getMinutes();
       // Open 08:00 - 16:30
@@ -45,9 +47,9 @@ const RegistrationStatus = () => {
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 60000); // Check every minute
+    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [getNow]);
 
   return (
     <small className={`badge ${status.isOpen ? 'bg-success' : 'bg-danger'}`}>

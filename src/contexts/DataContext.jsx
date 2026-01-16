@@ -11,35 +11,49 @@ export const DataProvider = ({ children }) => {
         stats: {},
         activities: [],
         upcomingParcels: [],
-        complaints: [],
         parcels: [],
         users: [],
         auditLogs: [],
         serverTime: null
     });
     const [loading, setLoading] = useState(true);
+    const [secondaryLoading, setSecondaryLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [timeOffset, setTimeOffset] = useState(0); // Offset in ms: Server - Client
 
-    // Load all data in parallel for maximum speed
+    // Sync Time Helper
+    const syncTime = (serverTimeStr) => {
+        if (serverTimeStr) {
+            const serverTime = new Date(serverTimeStr);
+            const localTime = new Date();
+            const offset = serverTime.getTime() - localTime.getTime();
+            setTimeOffset(offset);
+            return serverTime;
+        }
+        return new Date();
+    };
+
+    const getNow = useCallback(() => {
+        return new Date(Date.now() + timeOffset);
+    }, [timeOffset]);
+
+    // Load initial essential data (Dashboard Stats)
     const fetchEssentialData = useCallback(async () => {
         setLoading(true);
-
         try {
-            // Primary Data (Dashboard)
-            const [stats] = await Promise.all([
-                apiService.getDashboardStats().catch(e => ({ data: {} }))
-            ]);
+            const stats = await apiService.getDashboardStats().catch(e => ({ data: {} }));
+
+            const serverTime = syncTime(stats?.data?.system_status?.server_time);
 
             setData(prev => ({
                 ...prev,
                 stats: stats?.data || {},
-                serverTime: new Date()
+                serverTime: serverTime
             }));
             setError(null);
 
-            // Fetch secondary data immediately
+            // Trigger secondary data
             fetchSecondaryData();
-
         } catch (err) {
             console.error("Essential Data Fetch Error:", err);
             setError("ไม่สามารถโหลดข้อมูลได้");
@@ -48,24 +62,18 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    const [secondaryLoading, setSecondaryLoading] = useState(true);
-
-    // Load secondary data
+    // Load secondary data (Parcels)
     const fetchSecondaryData = useCallback(async () => {
         setSecondaryLoading(true);
         try {
-            // Load Parcels
             const parcelsData = await apiService.getParcels().catch(e => ({ data: [] }));
-
-            // Derive upcoming parcels (pending)
             const allParcels = parcelsData?.data || [];
             const upcoming = allParcels.filter(p => p.status === 'pending');
 
             setData(prev => ({
                 ...prev,
                 parcels: allParcels,
-                upcomingParcels: upcoming,
-                serverTime: new Date()
+                upcomingParcels: upcoming
             }));
         } catch (err) {
             console.error("Secondary Data Fetch Error:", err);
@@ -74,7 +82,6 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    // Load Users
     const fetchUsersData = useCallback(async () => {
         try {
             const usersData = await apiService.getUsers().catch(e => ({ data: [] }));
@@ -84,7 +91,6 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    // Load Audit Logs
     const fetchAuditLogs = useCallback(async (type = 'admin') => {
         try {
             const logsData = await apiService.getAuditLogs(type).catch(e => ({ data: [] }));
@@ -94,7 +100,6 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    // Refresh Data
     const refreshAllData = useCallback(async () => {
         try {
             const [stats, parcelsData] = await Promise.all([
@@ -102,6 +107,7 @@ export const DataProvider = ({ children }) => {
                 apiService.getParcels().catch(e => ({ data: [] }))
             ]);
 
+            const serverTime = syncTime(stats?.data?.system_status?.server_time);
             const allParcels = parcelsData?.data || [];
             const upcoming = allParcels.filter(p => p.status === 'pending');
 
@@ -110,7 +116,7 @@ export const DataProvider = ({ children }) => {
                 stats: stats?.data || prev.stats,
                 parcels: allParcels,
                 upcomingParcels: upcoming,
-                serverTime: new Date()
+                serverTime: serverTime
             }));
         } catch (err) {
             console.error("Refresh Data Error:", err);
@@ -121,7 +127,6 @@ export const DataProvider = ({ children }) => {
         fetchEssentialData();
     }, [fetchEssentialData]);
 
-    // Global Polling (Every 3 seconds - balanced real-time)
     const { startPolling, stopPolling } = usePolling(() => {
         refreshAllData();
     }, 3000, [refreshAllData]);
@@ -136,9 +141,10 @@ export const DataProvider = ({ children }) => {
         loading,
         secondaryLoading,
         error,
+        getNow,
         refreshData: refreshAllData,
-        fetchUsersData,  // เพิ่ม: ให้หน้า Users เรียกเอง
-        fetchAuditLogs   // เพิ่ม: ให้หน้า Audit Logs เรียกเอง
+        fetchUsersData,
+        fetchAuditLogs
     };
 
     return (
