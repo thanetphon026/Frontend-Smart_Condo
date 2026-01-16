@@ -4,10 +4,8 @@ import Sidebar from '../components/Layout/Sidebar';
 import Header from '../components/Layout/Header';
 import Dashboard from '../components/Pages/Dashboard';
 import Users from '../components/Pages/Users';
-import Complaints from '../components/Pages/Complaints';
 import Parcels from '../components/Pages/Parcels';
 import Scan from '../components/Pages/Scan';
-import Export from '../components/Pages/Export';
 import AuditLogs from '../components/Pages/AuditLogs';
 import { HEADER_MAP } from '../utils/constants';
 import { apiService } from '../services/api';
@@ -76,14 +74,10 @@ const BackOfficePage = () => {
         return <Dashboard />;
       case 'users':
         return <Users />;
-      case 'complaints':
-        return <Complaints />;
       case 'parcels':
         return <Parcels />;
       case 'scan':
         return <Scan />;
-      case 'export':
-        return <Export />;
       case 'audit-logs':
         return <AuditLogs />;
       default:

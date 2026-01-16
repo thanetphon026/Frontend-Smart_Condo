@@ -6,20 +6,16 @@ export const API_CONFIG = {
 export const NAV_ITEMS = [
   { id: 'dashboard', icon: 'bi-speedometer2', label: 'แดชบอร์ด' },
   { id: 'users', icon: 'bi-people', label: 'ข้อมูลผู้ใช้' },
-  { id: 'complaints', icon: 'bi-chat-left-text', label: 'ศูนย์ร้องเรียน' },
   { id: 'parcels', icon: 'bi-box-seam', label: 'พัสดุคงค้าง' },
   { id: 'scan', icon: 'bi-camera', label: 'สแกนพัสดุ' },
-  { id: 'export', icon: 'bi-file-earmark-excel', label: 'ส่งออกรายงานสรุป' },
   { id: 'audit-logs', icon: 'bi-clock-history', label: 'ประวัติการทำงาน' },
 ];
 
 export const HEADER_MAP = {
   dashboard: { title: 'แดชบอร์ด', subtitle: 'ภาพรวมระบบจัดการคอนโดอัจฉริยะ', icon: 'bi-speedometer2' },
   users: { title: 'ข้อมูลผู้ใช้', subtitle: 'จัดการข้อมูลสมาชิกและห้องพัก', icon: 'bi-people' },
-  complaints: { title: 'ศูนย์ร้องเรียน', subtitle: 'ติดตามสถานะและตอบกลับผู้อยู่อาศัยแบบเรียลไทม์', icon: 'bi-chat-left-text' },
   parcels: { title: 'พัสดุคงค้าง', subtitle: 'รายการรอรับของ', icon: 'bi-box-seam' },
   scan: { title: 'สแกนพัสดุ', subtitle: 'ระบบรับพัสดุอัจฉริยะ', icon: 'bi-camera' },
-  export: { title: 'ส่งออกรายงานสรุป', subtitle: 'ส่งออกข้อมูลในรูปแบบ CSV', icon: 'bi-file-earmark-excel' },
   'audit-logs': { title: 'ประวัติการทำงาน', subtitle: 'ตรวจสอบความโปร่งใสในการปฏิบัติงาน', icon: 'bi-clock-history' }
 };
 

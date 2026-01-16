@@ -7,6 +7,55 @@ import { apiService } from '../../services/api';
 import { escapeHtml, formatDateTime } from '../../utils/helpers';
 import { useData } from '../../contexts/DataContext';
 
+
+const RealTimeClock = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="text-secondary fw-bold" style={{ fontSize: '0.9rem' }}>
+      <i className="bi bi-clock me-1"></i>
+      {time.toLocaleTimeString('th-TH')}
+    </div>
+  );
+};
+
+const RegistrationStatus = () => {
+  const [status, setStatus] = useState({ isOpen: false, text: 'กำลังตรวจสอบ...' });
+
+  useEffect(() => {
+    const checkStatus = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      // Open 08:00 - 16:30
+      const currentTime = hour * 60 + minute;
+      const openTime = 8 * 60;
+      const closeTime = 16 * 60 + 30;
+
+      if (currentTime >= openTime && currentTime <= closeTime) {
+        setStatus({ isOpen: true, text: '🟢 เปิดลงทะเบียนรับนอกเวลา (08:00 - 16:30)' });
+      } else {
+        setStatus({ isOpen: false, text: '🔴 ปิดลงทะเบียนรับนอกเวลา (08:00 - 16:30)' });
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <small className={`badge ${status.isOpen ? 'bg-success' : 'bg-danger'}`}>
+      {status.text}
+    </small>
+  );
+};
+
 const Parcels = () => {
   const { parcels: allParcels, loading: globalLoading, secondaryLoading, refreshData } = useData();
   const [parcels, setParcels] = useState([]);
@@ -125,6 +174,12 @@ const Parcels = () => {
               </div>
             )}
           </div>
+
+          <div className="d-flex flex-column align-items-end me-3">
+            <RealTimeClock />
+            <RegistrationStatus />
+          </div>
+
           <button
             className="btn btn-sm btn-outline-primary"
             onClick={() => refreshData()}
