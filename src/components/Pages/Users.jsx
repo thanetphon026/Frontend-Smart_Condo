@@ -99,7 +99,7 @@ const Users = () => {
                         {escapeHtml(user.platform || '-')}
                       </span>
                     </td>
-                    <td className="text-nowrap">{formatDateTime(user.last_active)}</td>
+                    <td className="text-nowrap">{formatDateTime(user.last_active_at || user.last_active)}</td>
                   </tr>
                 ))
               ) : (

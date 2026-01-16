@@ -37,12 +37,11 @@ export const DataProvider = ({ children }) => {
         return new Date(Date.now() + timeOffset);
     }, [timeOffset]);
 
-    // Load initial essential data (Dashboard Stats)
+    // Fast Essential Load (Stats + Users count)
     const fetchEssentialData = useCallback(async () => {
         setLoading(true);
         try {
             const stats = await apiService.getDashboardStats().catch(e => ({ data: {} }));
-
             const serverTime = syncTime(stats?.data?.system_status?.server_time);
 
             setData(prev => ({
@@ -52,8 +51,9 @@ export const DataProvider = ({ children }) => {
             }));
             setError(null);
 
-            // Trigger secondary data
+            // Trigger background fetches
             fetchSecondaryData();
+            fetchUsersData();
         } catch (err) {
             console.error("Essential Data Fetch Error:", err);
             setError("ไม่สามารถโหลดข้อมูลได้");
@@ -62,7 +62,7 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    // Load secondary data (Parcels)
+    // Load Parcels
     const fetchSecondaryData = useCallback(async () => {
         setSecondaryLoading(true);
         try {
@@ -82,6 +82,7 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
+    // Load Users (Now part of regular refresh)
     const fetchUsersData = useCallback(async () => {
         try {
             const usersData = await apiService.getUsers().catch(e => ({ data: [] }));
@@ -91,6 +92,7 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
+    // Load Records (Audit Logs)
     const fetchAuditLogs = useCallback(async (type = 'admin') => {
         try {
             const logsData = await apiService.getAuditLogs(type).catch(e => ({ data: [] }));
@@ -100,11 +102,13 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
+    // Global background sync to keep data fresh without resetting UI state
     const refreshAllData = useCallback(async () => {
         try {
-            const [stats, parcelsData] = await Promise.all([
+            const [stats, parcelsData, usersData] = await Promise.all([
                 apiService.getDashboardStats().catch(e => ({ data: {} })),
-                apiService.getParcels().catch(e => ({ data: [] }))
+                apiService.getParcels().catch(e => ({ data: [] })),
+                apiService.getUsers().catch(e => ({ data: [] }))
             ]);
 
             const serverTime = syncTime(stats?.data?.system_status?.server_time);
@@ -116,6 +120,7 @@ export const DataProvider = ({ children }) => {
                 stats: stats?.data || prev.stats,
                 parcels: allParcels,
                 upcomingParcels: upcoming,
+                users: usersData?.data || prev.users,
                 serverTime: serverTime
             }));
         } catch (err) {
@@ -129,7 +134,7 @@ export const DataProvider = ({ children }) => {
 
     const { startPolling, stopPolling } = usePolling(() => {
         refreshAllData();
-    }, 3000, [refreshAllData]);
+    }, 4000, [refreshAllData]); // 4s sync for optimal performance & freshness
 
     useEffect(() => {
         startPolling();
