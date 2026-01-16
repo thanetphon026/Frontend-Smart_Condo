@@ -25,21 +25,19 @@ export const DataProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            // Primary Data (Dashboard) - ONLY load what's needed
-            const [stats, activityData] = await Promise.all([
-                apiService.getDashboardStats().catch(e => ({})),
-                apiService.getActivity().catch(e => ({ activities: [] }))
+            // Primary Data (Dashboard)
+            const [stats] = await Promise.all([
+                apiService.getDashboardStats().catch(e => ({ data: {} }))
             ]);
 
             setData(prev => ({
                 ...prev,
-                stats: stats || {},
-                activities: activityData?.activities || [],
+                stats: stats?.data || {},
                 serverTime: new Date()
             }));
             setError(null);
 
-            // โหลด secondary data หลังจาก essential data เสร็จ
+            // Fetch secondary data immediately
             fetchSecondaryData();
 
         } catch (err) {
@@ -52,20 +50,21 @@ export const DataProvider = ({ children }) => {
 
     const [secondaryLoading, setSecondaryLoading] = useState(true);
 
-    // Load secondary data in background - OPTIMIZED: ลดจาก 4 เหลือ 2
+    // Load secondary data
     const fetchSecondaryData = useCallback(async () => {
         setSecondaryLoading(true);
         try {
-            // โหลดเฉพาะข้อมูลที่จำเป็น: Complaints และ Parcels
-            const [complaintsData, parcelsData] = await Promise.all([
-                apiService.getComplaints('all', 'time:desc').catch(e => ({ items: [] })),
-                apiService.getParcels().catch(e => ({ items: [] }))
-            ]);
+            // Load Parcels
+            const parcelsData = await apiService.getParcels().catch(e => ({ data: [] }));
+
+            // Derive upcoming parcels (pending)
+            const allParcels = parcelsData?.data || [];
+            const upcoming = allParcels.filter(p => p.status === 'pending');
 
             setData(prev => ({
                 ...prev,
-                complaints: complaintsData?.items || [],
-                parcels: parcelsData?.items || [],
+                parcels: allParcels,
+                upcomingParcels: upcoming,
                 serverTime: new Date()
             }));
         } catch (err) {
@@ -75,47 +74,42 @@ export const DataProvider = ({ children }) => {
         }
     }, []);
 
-    // โหลด Users และ Audit Logs แยกต่างหาก (เฉพาะตอนเข้าหน้านั้นๆ)
+    // Load Users
     const fetchUsersData = useCallback(async () => {
         try {
-            const usersData = await apiService.searchUsers('').catch(e => ({ items: [] }));
-            setData(prev => ({ ...prev, users: usersData?.items || [] }));
+            const usersData = await apiService.getUsers().catch(e => ({ data: [] }));
+            setData(prev => ({ ...prev, users: usersData?.data || [] }));
         } catch (err) {
             console.error("Users Data Fetch Error:", err);
         }
     }, []);
 
-    const fetchAuditLogs = useCallback(async () => {
+    // Load Audit Logs
+    const fetchAuditLogs = useCallback(async (type = 'admin') => {
         try {
-            const logsData = await apiService.getAuditLogs().catch(e => ({ logs: [] }));
-            setData(prev => ({ ...prev, auditLogs: logsData?.logs || [] }));
+            const logsData = await apiService.getAuditLogs(type).catch(e => ({ data: [] }));
+            setData(prev => ({ ...prev, auditLogs: logsData?.data || [] }));
         } catch (err) {
             console.error("Audit Logs Fetch Error:", err);
         }
     }, []);
 
-    // Background refresh ONLY essential data (ไม่รีเฟรช users กับ logs ทุกครั้ง)
+    // Refresh Data
     const refreshAllData = useCallback(async () => {
         try {
-            // โหลดเฉพาะข้อมูลที่เปลี่ยนบ่อย
-            const [
-                stats,
-                activityData,
-                complaintsData,
-                parcelsData
-            ] = await Promise.all([
-                apiService.getDashboardStats().catch(e => ({})),
-                apiService.getActivity().catch(e => ({ activities: [] })),
-                apiService.getComplaints('all', 'time:desc').catch(e => ({ items: [] })),
-                apiService.getParcels().catch(e => ({ items: [] }))
+            const [stats, parcelsData] = await Promise.all([
+                apiService.getDashboardStats().catch(e => ({ data: {} })),
+                apiService.getParcels().catch(e => ({ data: [] }))
             ]);
+
+            const allParcels = parcelsData?.data || [];
+            const upcoming = allParcels.filter(p => p.status === 'pending');
 
             setData(prev => ({
                 ...prev,
-                stats: stats || prev.stats,
-                activities: activityData?.activities || prev.activities,
-                complaints: complaintsData?.items || prev.complaints,
-                parcels: parcelsData?.items || prev.parcels,
+                stats: stats?.data || prev.stats,
+                parcels: allParcels,
+                upcomingParcels: upcoming,
                 serverTime: new Date()
             }));
         } catch (err) {
