@@ -1,0 +1,16 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "main-p"]
+	url = https://github.com/thanetphon026/Frontend-Smart_Condo.git
+	fetch = +refs/heads/*:refs/remotes/main-p/*
+[branch "main"]
+	remote = main-p
+	merge = refs/heads/main
+	gk-last-accessed = 2026-01-16T17:13:20.307Z
+	gk-last-modified = 2026-01-16T17:13:20.307Z
+	vscode-merge-base = main-p/main
