@@ -188,6 +188,13 @@ class ApiService {
     });
   }
 
+  async confirmParcel(payload) {
+    return this.request('admin/parcels', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   // --- LOGS ---
   async getAuditLogs(type = 'admin') {
     return this.request(`admin/logs?type=${type}`);
