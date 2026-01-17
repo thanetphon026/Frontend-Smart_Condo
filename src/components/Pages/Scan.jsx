@@ -150,7 +150,7 @@ const Scan = () => {
 
       const response = await apiService.confirmParcel(payload, adminName);
 
-      if (response.status === 'saved') {
+      if (response.status === 'success' || response.status === 'saved') {
         Swal.fire({
           icon: 'success',
           title: '✅ บันทึกและส่งแจ้งเตือนสำเร็จ',
