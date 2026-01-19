@@ -43,6 +43,18 @@ const AuditLogs = () => {
     );
   });
 
+  const getActionColor = (action) => {
+    switch (action) {
+      case 'Admin Login': return 'bg-success bg-opacity-10 text-success';
+      case 'Admin Logout': return 'bg-secondary bg-opacity-10 text-secondary';
+      case 'Scan Parcel': return 'bg-primary bg-opacity-10 text-primary';
+      case 'Pickup Parcel': return 'bg-info bg-opacity-10 text-info';
+      case 'Self Pickup Scan (Success)': return 'bg-success bg-opacity-10 text-success';
+      case 'Self Pickup Scan (Failed)': return 'bg-danger bg-opacity-10 text-danger';
+      default: return 'bg-light text-dark';
+    }
+  };
+
   return (
     <div id="auditLogs">
       <div className="card-custom">
@@ -81,7 +93,7 @@ const AuditLogs = () => {
         </div>
 
         <div className="table-responsive">
-          <table className="table table-hover">
+          <table className="table table-hover align-middle">
             <thead className="table-light">
               <tr>
                 <th>ผู้ดำเนินการ</th>
@@ -102,11 +114,15 @@ const AuditLogs = () => {
               ) : filteredLogs.length > 0 ? (
                 filteredLogs.map((log, index) => (
                   <tr key={index}>
-                    <td>{escapeHtml(log.performed_by || '-')}</td>
-                    <td><span className="badge bg-primary bg-opacity-10 text-primary">{log.action}</span></td>
+                    <td className="fw-bold">{escapeHtml(log.performed_by || '-')}</td>
+                    <td>
+                      <span className={`badge ${getActionColor(log.action)}`}>
+                        {log.action}
+                      </span>
+                    </td>
                     <td>{escapeHtml(log.target || '-')}</td>
                     <td>{formatDateTime(log.timestamp)}</td>
-                    <td>{escapeHtml(truncateText(log.details, 50))}</td>
+                    <td className="text-muted small">{escapeHtml(truncateText(log.details, 60))}</td>
                   </tr>
                 ))
               ) : (
