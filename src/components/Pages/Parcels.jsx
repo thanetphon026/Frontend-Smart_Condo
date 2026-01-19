@@ -34,15 +34,15 @@ const RegistrationStatus = () => {
       const now = getNow();
       const hour = now.getHours();
       const minute = now.getMinutes();
-      // Open 08:00 - 16:30
+      // Open 08:00 - 17:30
       const currentTime = hour * 60 + minute;
-      const openTime = 8 * 60;
-      const closeTime = 16 * 60 + 30;
+      const openTime = 8 * 60 + 30;
+      const closeTime = 17 * 60 + 30;
 
       if (currentTime >= openTime && currentTime <= closeTime) {
-        setStatus({ isOpen: true, text: '🟢 เปิดลงทะเบียนรับนอกเวลา (08:00 - 16:30)' });
+        setStatus({ isOpen: true, text: '🟢 เปิดลงทะเบียนรับนอกเวลา (08:30 - 17:30)' });
       } else {
-        setStatus({ isOpen: false, text: '🔴 ปิดลงทะเบียนรับนอกเวลา (08:00 - 16:30)' });
+        setStatus({ isOpen: false, text: '🔴 ปิดลงทะเบียนรับนอกเวลา (08:30 - 17:30)' });
       }
     };
 
@@ -215,7 +215,7 @@ const Parcels = () => {
               onClick={() => setActiveTab('after-hours')}
             >
               <i className="bi bi-moon-stars me-1"></i>
-              นอกเวลา (18:00-22:00)
+              นอกเวลา (18:00-08:30)
             </button>
           </div>
 
