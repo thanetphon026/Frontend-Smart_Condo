@@ -51,6 +51,7 @@ const AuditLogs = () => {
       case 'Pickup Parcel': return 'bg-info bg-opacity-10 text-info';
       case 'Self Pickup Scan (Success)': return 'bg-success bg-opacity-10 text-success';
       case 'Self Pickup Scan (Failed)': return 'bg-danger bg-opacity-10 text-danger';
+      case 'Self Pickup Cancel': return 'bg-warning bg-opacity-10 text-warning';
       default: return 'bg-light text-dark';
     }
   };
