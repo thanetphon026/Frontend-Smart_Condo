@@ -34,7 +34,7 @@ const Scan = () => {
 
     // [NEW] Client-side validation
     const allowedExtensions = ['png', 'jpg', 'jpeg', 'heic', 'heif'];
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
     const fileExtension = file.name.split('.').pop().toLowerCase();
 
     if (!allowedExtensions.includes(fileExtension)) {
@@ -43,7 +43,7 @@ const Scan = () => {
     }
 
     if (file.size > maxFileSize) {
-      alert('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5MB)');
+      alert('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 10MB)');
       return;
     }
 
