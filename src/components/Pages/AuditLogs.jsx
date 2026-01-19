@@ -28,8 +28,8 @@ const AuditLogs = () => {
   }, [activeTab]);
 
   const handleExport = () => {
-    // Trigger CSV download
-    const url = `${apiService.baseUrl}/api/admin/logs/export?type=${activeTab}&token=${apiService.getSessionToken()}`;
+    // Trigger CSV download with correct API Token
+    const url = `${apiService.baseUrl}/api/admin/logs/export?type=${activeTab}&token=${apiService.token}`;
     window.open(url, '_blank');
   };
 
@@ -50,6 +50,7 @@ const AuditLogs = () => {
       case 'Scan Parcel': return 'bg-primary bg-opacity-10 text-primary';
       case 'Pickup Parcel': return 'bg-info bg-opacity-10 text-info';
       case 'Self Pickup Scan (Success)': return 'bg-success bg-opacity-10 text-success';
+      case 'Self Pickup Success': return 'bg-success bg-opacity-10 text-success';
       case 'Self Pickup Scan (Failed)': return 'bg-danger bg-opacity-10 text-danger';
       case 'Self Pickup Cancel': return 'bg-warning bg-opacity-10 text-warning';
       default: return 'bg-light text-dark';
