@@ -6,6 +6,7 @@ import Dashboard from '../components/Pages/Dashboard';
 import Users from '../components/Pages/Users';
 import Parcels from '../components/Pages/Parcels';
 import Scan from '../components/Pages/Scan';
+import KnowledgeBase from '../components/Pages/KnowledgeBase';
 import AuditLogs from '../components/Pages/AuditLogs';
 import { HEADER_MAP } from '../utils/constants';
 import { apiService } from '../services/api';
@@ -78,6 +79,8 @@ const BackOfficePage = () => {
         return <Parcels />;
       case 'scan':
         return <Scan />;
+      case 'knowledge':
+        return <KnowledgeBase />;
       case 'audit-logs':
         return <AuditLogs />;
       default:

@@ -195,6 +195,14 @@ class ApiService {
     });
   }
 
+  // --- KNOWLEDGE BASE ---
+  async uploadPdf(formData) {
+    return this.request('admin/upload-pdf', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
   // --- LOGS ---
   async getAuditLogs(type = 'admin') {
     return this.request(`admin/logs?type=${type}`);

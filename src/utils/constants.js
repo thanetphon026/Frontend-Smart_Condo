@@ -8,6 +8,7 @@ export const NAV_ITEMS = [
   { id: 'users', icon: 'bi-people', label: 'ข้อมูลผู้ใช้' },
   { id: 'parcels', icon: 'bi-box-seam', label: 'พัสดุคงค้าง' },
   { id: 'scan', icon: 'bi-camera', label: 'สแกนพัสดุ' },
+  { id: 'knowledge', icon: 'bi-journal-text', label: 'จัดการความรู้' },
   { id: 'audit-logs', icon: 'bi-clock-history', label: 'ประวัติการทำงาน' },
 ];
 
@@ -16,6 +17,7 @@ export const HEADER_MAP = {
   users: { title: 'ข้อมูลผู้ใช้', subtitle: 'จัดการข้อมูลสมาชิกและห้องพัก', icon: 'bi-people' },
   parcels: { title: 'พัสดุคงค้าง', subtitle: 'รายการรอรับของ', icon: 'bi-box-seam' },
   scan: { title: 'สแกนพัสดุ', subtitle: 'ระบบรับพัสดุอัจฉริยะ', icon: 'bi-camera' },
+  knowledge: { title: 'จัดการความรู้ (RAG)', subtitle: 'อัปโหลด PDF เพื่อเพิ่มข้อมูลให้ AI', icon: 'bi-journal-text' },
   'audit-logs': { title: 'ประวัติการทำงาน', subtitle: 'ตรวจสอบความโปร่งใสในการปฏิบัติงาน', icon: 'bi-clock-history' }
 };
 
