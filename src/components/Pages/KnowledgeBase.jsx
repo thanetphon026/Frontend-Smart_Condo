@@ -204,13 +204,14 @@ const KnowledgeBase = () => {
                                 <th style={{ width: '60px' }} className="ps-3 text-center">#</th>
                                 <th>ชื่อเอกสาร</th>
                                 <th className="text-center">ส่วน (Chunks)</th>
+                                <th className="text-center">ประเภท</th>
                                 <th style={{ width: '100px' }} className="text-end pe-4">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center text-muted py-5">
+                                    <td colSpan="5" className="text-center text-muted py-5">
                                         <div className="spinner-border spinner-border-sm me-2"></div>
                                         กำลังดึงข้อมูล...
                                     </td>
@@ -222,12 +223,18 @@ const KnowledgeBase = () => {
                                         <td>
                                             <div className="d-flex align-items-center">
                                                 <i className="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                                                <span className="fw-medium text-dark text-truncate" style={{ maxWidth: '350px' }}>{doc.filename}</span>
+                                                <span className="fw-medium text-dark text-truncate" style={{ maxWidth: '300px' }}>{doc.filename}</span>
                                             </div>
                                         </td>
                                         <td className="text-center">
                                             <span className="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">
                                                 {doc.chunks}
+                                            </span>
+                                        </td>
+                                        <td className="text-center">
+                                            <span className="text-muted small">
+                                                <i className="bi bi-hdd-network me-1"></i>
+                                                Vector Storage
                                             </span>
                                         </td>
                                         <td className="text-end pe-4">
@@ -244,7 +251,7 @@ const KnowledgeBase = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="text-center text-muted py-5">
+                                    <td colSpan="5" className="text-center text-muted py-5">
                                         <i className="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
                                         ยังไม่มีเอกสารในคลังความรู้
                                     </td>
