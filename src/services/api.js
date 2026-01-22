@@ -203,6 +203,16 @@ class ApiService {
     });
   }
 
+  async getDocuments() {
+    return this.request('admin/documents');
+  }
+
+  async deleteDocument(filename) {
+    return this.request(`admin/documents/${filename}`, {
+      method: 'DELETE'
+    });
+  }
+
   // --- LOGS ---
   async getAuditLogs(type = 'admin') {
     return this.request(`admin/logs?type=${type}`);
