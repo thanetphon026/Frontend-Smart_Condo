@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../../services/api';
 import { useData } from '../../contexts/DataContext';
+import Swal from 'sweetalert2';
 
 const KnowledgeBase = () => {
     const { loading: globalLoading } = useData();
@@ -8,6 +9,7 @@ const KnowledgeBase = () => {
     const [loading, setLoading] = useState(true);
     const [file, setFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [deletingFile, setDeletingFile] = useState(null); // Track which file is being deleted
     const [message, setMessage] = useState(null);
     const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
@@ -89,17 +91,41 @@ const KnowledgeBase = () => {
     };
 
     const handleDelete = async (filename) => {
-        if (!window.confirm(`ยืนยันการลบเอกสาร "${filename}"?`)) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบเอกสาร?',
+            text: `คุณต้องการลบ "${filename}" ออกจากคลังความรู้ใช่หรือไม่?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        });
 
-        try {
-            await apiService.deleteDocument(filename);
-            fetchDocuments();
-            setMessage(`ลบเอกสาร ${filename} สำเร็จ`);
-        } catch (err) {
-            console.error("Delete error:", err);
-            alert(err.message || "เกิดข้อผิดพลาดในการลบเอกสาร");
+        if (result.isConfirmed) {
+            setDeletingFile(filename);
+            try {
+                await apiService.deleteDocument(filename);
+                await fetchDocuments();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ลบสำเร็จ',
+                    text: `ลบเอกสาร ${filename} เรียบร้อยแล้ว`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (err) {
+                console.error("Delete error:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: err.message || "ไม่สามารถลบเอกสารได้"
+                });
+            } finally {
+                setDeletingFile(null);
+            }
         }
     };
 
@@ -241,10 +267,15 @@ const KnowledgeBase = () => {
                                             <button
                                                 className="btn btn-outline-danger btn-sm rounded-circle border-0"
                                                 onClick={() => handleDelete(doc.filename)}
+                                                disabled={deletingFile === doc.filename}
                                                 title="ลบเอกสาร"
                                                 style={{ width: '36px', height: '36px' }}
                                             >
-                                                <i className="bi bi-trash"></i>
+                                                {deletingFile === doc.filename ? (
+                                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                ) : (
+                                                    <i className="bi bi-trash"></i>
+                                                )}
                                             </button>
                                         </td>
                                     </tr>
