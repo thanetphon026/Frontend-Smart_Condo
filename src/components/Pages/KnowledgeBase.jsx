@@ -1,20 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../../services/api';
-import SearchBox from '../UI/SearchBox';
 import { useData } from '../../contexts/DataContext';
 
 const KnowledgeBase = () => {
-    const { loading: globalLoading, secondaryLoading, refreshData } = useData();
+    const { loading: globalLoading } = useData();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
     const [file, setFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState(null);
     const [error, setError] = useState(null);
-    const [showUpload, setShowUpload] = useState(false);
+    const fileInputRef = useRef(null);
 
-    // Initial fetch and sync with global loading if appropriate
     const fetchDocuments = useCallback(async () => {
         try {
             setLoading(true);
@@ -31,28 +28,43 @@ const KnowledgeBase = () => {
         fetchDocuments();
     }, [fetchDocuments]);
 
-    // Client-side filtering
-    const filteredDocuments = documents.filter(doc =>
-        doc.filename.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleSearch = (term) => {
-        setSearchTerm(term);
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
     };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile && selectedFile.type === 'application/pdf') {
-            setFile(selectedFile);
-            setError(null);
-        } else {
+        setMessage(null);
+        setError(null);
+
+        if (!selectedFile) {
             setFile(null);
-            setError('กรุณาเลือกไฟล์ PDF เท่านั้น');
+            return;
         }
+
+        // Validation
+        const isPDF = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
+        const isUnder10MB = selectedFile.size <= 10 * 1024 * 1024;
+
+        if (!isPDF) {
+            setError('❌ กรุณาเลือกไฟล์ PDF เท่านั้น');
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        if (!isUnder10MB) {
+            setError('❌ ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 10MB)');
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        setFile(selectedFile);
     };
 
     const handleUpload = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!file) return;
 
         setIsUploading(true);
@@ -64,12 +76,9 @@ const KnowledgeBase = () => {
 
         try {
             const res = await apiService.uploadPdf(formData);
-            setMessage(`สำเร็จ! เพิ่มเอกสารเรียบร้อยแล้ว (${res.chunks} ส่วน)`);
+            setMessage(`✅ สำเร็จ! อัปโหลดเอกสารเรียบร้อยแล้ว (${res.chunks} ส่วน)`);
             setFile(null);
-            if (document.getElementById('pdf-upload-input')) {
-                document.getElementById('pdf-upload-input').value = '';
-            }
-            setShowUpload(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             fetchDocuments();
         } catch (err) {
             console.error('Upload Error:', err);
@@ -87,137 +96,146 @@ const KnowledgeBase = () => {
         try {
             await apiService.deleteDocument(filename);
             fetchDocuments();
+            setMessage(`ลบเอกสาร ${filename} สำเร็จ`);
         } catch (err) {
             console.error("Delete error:", err);
             alert(err.message || "เกิดข้อผิดพลาดในการลบเอกสาร");
         }
     };
 
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = 2;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
+
     return (
         <div id="knowledge-base">
             <div className="card-custom mb-3">
-                {/* Header Section - Identical to Parcels.jsx */}
-                <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 mb-3">
-                    <div className="flex-grow-1">
-                        <h5 className="mb-1">จัดการคลังความรู้ (KB)</h5>
-                        <small className="text-muted">ข้อมูล PDF สำหรับ AI ประมวลผลและตอบคำถามลูกบ้าน</small>
-                        {!loading && (
-                            <div className="result-count">
-                                พบ {filteredDocuments.length} รายการ
+                <h5 className="text-secondary mb-3">
+                    <i className="bi bi-journal-plus me-2"></i> จัดการความรู้ (Knowledge Base)
+                </h5>
+
+                {/* Large Upload Block - Scan Page style */}
+                <div
+                    className={`upload-area d-flex flex-column justify-content-center align-items-center mb-4 ${file ? 'border-primary bg-light' : ''}`}
+                    onClick={handleFileClick}
+                    style={{
+                        height: '280px',
+                        border: '2px dashed #cbd5e1',
+                        borderRadius: '20px',
+                        backgroundColor: '#f8fafc',
+                        transition: 'all 0.3s ease'
+                    }}
+                >
+                    {file ? (
+                        <div className="text-center p-3 animate__animated animate__fadeIn">
+                            <i className="bi bi-file-earmark-pdf-fill text-danger display-1 mb-3"></i>
+                            <h5 className="fw-bold text-dark mb-1 text-truncate" style={{ maxWidth: '400px' }}>{file.name}</h5>
+                            <p className="text-muted mb-3 small">ขนาดไฟล์: {formatFileSize(file.size)}</p>
+                            <span className="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                <i className="bi bi-arrow-repeat me-1"></i> เปลี่ยนไฟล์
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="upload-placeholder text-center p-4">
+                            <i className="bi bi-cloud-upload display-4 mb-3 text-muted opacity-50"></i>
+                            <h5 className="fw-bold text-dark mb-2">กดเพื่อเลือกไฟล์ PDF หรือลากไฟล์มาวาง</h5>
+                            <div className="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill mt-2">
+                                <i className="bi bi-info-circle me-1"></i> รับเฉพาะ .pdf เท่านั้น (สูงสุด 10MB)
                             </div>
-                        )}
-                    </div>
-
-                    <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => fetchDocuments()}
-                        disabled={loading}
-                    >
-                        <i className="bi bi-arrow-clockwise me-1"></i>
-                        {loading ? 'กำลังโหลด...' : 'รีเฟรช'}
-                    </button>
-
-                    <button
-                        className={`btn btn-sm ${showUpload ? 'btn-secondary' : 'btn-success'}`}
-                        onClick={() => setShowUpload(!showUpload)}
-                    >
-                        <i className={`bi ${showUpload ? 'bi-x-lg' : 'bi-plus-lg'} me-1`}></i>
-                        {showUpload ? 'ปิดฟอร์ม' : 'เพิ่มเอกสารใหม่'}
-                    </button>
-
-                    <div style={{ maxWidth: '300px', width: '100%' }}>
-                        <SearchBox
-                            placeholder="ค้นหาชื่อเอกสาร..."
-                            onSearch={handleSearch}
-                        />
-                    </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Upload Form Section (Inline like a filter or separate area inside card) */}
-                {showUpload && (
-                    <div className="bg-light p-3 rounded-3 mb-4 border fade-in">
-                        <h6 className="fw-bold mb-3">อัปโหลดไฟล์ PDF</h6>
-                        <form onSubmit={handleUpload}>
-                            <div className="row g-2 align-items-center">
-                                <div className="col-grow">
-                                    <input
-                                        id="pdf-upload-input"
-                                        type="file"
-                                        accept=".pdf"
-                                        className="form-control form-control-sm"
-                                        onChange={handleFileChange}
-                                        disabled={isUploading}
-                                    />
-                                </div>
-                                <div className="col-auto">
-                                    <button
-                                        type="submit"
-                                        className="btn btn-sm btn-primary px-4"
-                                        disabled={!file || isUploading}
-                                    >
-                                        {isUploading ? (
-                                            <span className="spinner-border spinner-border-sm me-1"></span>
-                                        ) : (
-                                            <i className="bi bi-cloud-upload me-1"></i>
-                                        )}
-                                        อัปโหลด
-                                    </button>
-                                </div>
-                            </div>
-                            {error && <div className="text-danger small mt-2">{error}</div>}
-                            {message && <div className="text-success small mt-2">{message}</div>}
-                            <div className="text-muted small mt-2">
-                                * ไฟล์ภาษาไทยรองรับได้ดี หากอัปโหลดชื่อซ้ำ ข้อมูลเก่าจะถูกแทนที่อัตโนมัติ
-                            </div>
-                        </form>
-                    </div>
-                )}
+                <input
+                    type="file"
+                    accept=".pdf"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    disabled={isUploading}
+                />
 
-                {/* Table Section - Identical style to Parcels.jsx */}
+                <div className="d-grid gap-2 mb-4">
+                    <button
+                        className="btn btn-primary btn-lg fw-bold shadow-sm rounded-3"
+                        onClick={handleUpload}
+                        disabled={!file || isUploading}
+                        style={{ padding: '15px' }}
+                    >
+                        {isUploading ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                กำลังอัปโหลดและประมวลผล...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-cloud-arrow-up-fill me-2"></i> ยืนยันการอัปโหลดเอกสาร
+                            </>
+                        )}
+                    </button>
+                    {file && !isUploading && (
+                        <button className="btn btn-link btn-sm text-muted" onClick={() => setFile(null)}>
+                            ยกเลิก
+                        </button>
+                    )}
+                </div>
+
+                {error && <div className="alert alert-danger border-0 shadow-sm py-3 mb-4 animate__animated animate__shakeX"><i className="bi bi-exclamation-triangle-fill me-2"></i> {error}</div>}
+                {message && <div className="alert alert-success border-0 shadow-sm py-3 mb-4 animate__animated animate__fadeIn"><i className="bi bi-check-circle-fill me-2"></i> {message}</div>}
+
+                <hr className="my-4 opacity-50" />
+
+                {/* Table Section */}
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h6 className="fw-bold text-secondary mb-0">
+                        <i className="bi bi-journal-text me-2"></i> เอกสารทั้งหมดในระบบ ({documents.length})
+                    </h6>
+                </div>
+
                 <div className="table-responsive">
                     <table className="table table-hover align-middle mb-0">
                         <thead className="table-light">
                             <tr>
-                                <th style={{ width: '50px' }}>#</th>
+                                <th style={{ width: '60px' }} className="ps-3 text-center">#</th>
                                 <th>ชื่อเอกสาร</th>
-                                <th>จำนวนข้อความ (Chunks)</th>
-                                <th>สถานะ</th>
-                                <th style={{ width: '100px' }} className="text-end pe-3">จัดการ</th>
+                                <th className="text-center">ส่วน (Chunks)</th>
+                                <th style={{ width: '100px' }} className="text-end pe-4">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="5" className="text-center text-muted py-4">
+                                    <td colSpan="4" className="text-center text-muted py-5">
                                         <div className="spinner-border spinner-border-sm me-2"></div>
-                                        กำลังโหลดข้อมูลเอกสาร...
+                                        กำลังดึงข้อมูล...
                                     </td>
                                 </tr>
-                            ) : filteredDocuments.length > 0 ? (
-                                filteredDocuments.map((doc, index) => (
+                            ) : documents.length > 0 ? (
+                                documents.map((doc, index) => (
                                     <tr key={index}>
-                                        <td className="text-muted small">{index + 1}</td>
+                                        <td className="ps-3 text-center text-muted">{index + 1}</td>
                                         <td>
                                             <div className="d-flex align-items-center">
                                                 <i className="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                                                <span className="fw-medium text-dark">{doc.filename}</span>
+                                                <span className="fw-medium text-dark text-truncate" style={{ maxWidth: '350px' }}>{doc.filename}</span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span className="badge bg-secondary bg-opacity-10 text-secondary">
-                                                {doc.chunks} ส่วน
+                                        <td className="text-center">
+                                            <span className="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">
+                                                {doc.chunks}
                                             </span>
                                         </td>
-                                        <td>
-                                            <span className="badge bg-success bg-opacity-10 text-success">
-                                                ใช้งานจริง (Live)
-                                            </span>
-                                        </td>
-                                        <td className="text-end pe-3">
+                                        <td className="text-end pe-4">
                                             <button
-                                                className="btn btn-outline-danger btn-sm"
+                                                className="btn btn-outline-danger btn-sm rounded-circle border-0"
                                                 onClick={() => handleDelete(doc.filename)}
                                                 title="ลบเอกสาร"
+                                                style={{ width: '36px', height: '36px' }}
                                             >
                                                 <i className="bi bi-trash"></i>
                                             </button>
@@ -226,8 +244,9 @@ const KnowledgeBase = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="text-center text-muted py-5">
-                                        {searchTerm ? 'ไม่พบชื่อเอกสารที่ตรงกัน' : 'ยังไม่มีเอกสารในคลังความรู้'}
+                                    <td colSpan="4" className="text-center text-muted py-5">
+                                        <i className="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
+                                        ยังไม่มีเอกสารในคลังความรู้
                                     </td>
                                 </tr>
                             )}
