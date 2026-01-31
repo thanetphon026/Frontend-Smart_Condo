@@ -224,6 +224,34 @@ const Scan = () => {
     };
   }, []);
 
+  const handleAutofill = () => {
+    if (userFound.exists) {
+      setScanData(prev => ({
+        ...prev,
+        room_number: userFound.room_number,
+        recipient_name: `${userFound.first_name || ''} ${userFound.last_name || ''}`.trim()
+      }));
+
+      // Update validation classes
+      setTimeout(() => {
+        document.getElementById('room_number')?.classList.add('is-valid');
+        document.getElementById('room_number')?.classList.remove('is-invalid');
+        document.getElementById('recipient_name')?.classList.add('is-valid');
+        document.getElementById('recipient_name')?.classList.remove('is-invalid');
+      }, 0);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ใช้ข้อมูลจากระบบ',
+        text: `อัปเดตข้อมูลเป็น คุณ${userFound.first_name} เรียบร้อยแล้ว`,
+        timer: 1500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+  };
+
   const handleCameraClick = () => {
     cameraInputRef.current?.click();
   };
@@ -556,12 +584,21 @@ const Scan = () => {
             )}
 
             {hasScanned && userFound.exists && (
-              <div className="alert alert-success mt-3 mb-0 d-flex align-items-center">
-                <i className="bi bi-check-circle-fill me-2"></i>
-                <div>
-                  <strong>พบเจ้าของห้อง</strong><br />
-                  <small>{userFound.first_name} {userFound.last_name} (ห้อง {userFound.room_number})</small>
+              <div className="alert alert-success mt-3 mb-0 d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-check-circle-fill me-2"></i>
+                  <div>
+                    <strong>พบเจ้าของห้อง</strong><br />
+                    <small>{userFound.first_name} {userFound.last_name} (ห้อง {userFound.room_number})</small>
+                  </div>
                 </div>
+                <button
+                  className="btn btn-sm btn-success bg-opacity-10 text-success border-0 rounded-pill px-3"
+                  onClick={handleAutofill}
+                  title="ใช้ชื่อและเลขห้องนี้"
+                >
+                  <i className="bi bi-clipboard-check me-1"></i> ใช้ข้อมูลนี้
+                </button>
               </div>
             )}
           </div>
