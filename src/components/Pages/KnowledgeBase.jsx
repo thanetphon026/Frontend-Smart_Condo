@@ -248,7 +248,7 @@ const KnowledgeBase = () => {
                                         <td data-label="ชื่อเอกสาร">
                                             <div className="d-flex align-items-center">
                                                 <i className="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                                                <span className="fw-medium text-dark text-truncate" style={{ maxWidth: '300px' }}>{doc.filename}</span>
+                                                <span className="fw-medium text-dark" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{doc.filename}</span>
                                             </div>
                                         </td>
                                         <td data-label="ส่วน" className="text-center">
