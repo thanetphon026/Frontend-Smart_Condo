@@ -150,7 +150,7 @@ const KnowledgeBase = () => {
                     className={`upload-area d-flex flex-column justify-content-center align-items-center mb-4 ${file ? 'border-primary bg-light' : ''}`}
                     onClick={handleFileClick}
                     style={{
-                        height: '280px',
+                        height: '240px',
                         border: '2px dashed #cbd5e1',
                         borderRadius: '20px',
                         backgroundColor: '#f8fafc',
@@ -159,8 +159,8 @@ const KnowledgeBase = () => {
                 >
                     {file ? (
                         <div className="text-center p-3 animate__animated animate__fadeIn">
-                            <i className="bi bi-file-earmark-pdf-fill text-danger display-1 mb-3"></i>
-                            <h5 className="fw-bold text-dark mb-1 text-truncate" style={{ maxWidth: '400px' }}>{file.name}</h5>
+                            <i className="bi bi-file-earmark-pdf-fill text-danger display-4 mb-3"></i>
+                            <h6 className="fw-bold text-dark mb-1 text-truncate" style={{ maxWidth: '300px' }}>{file.name}</h6>
                             <p className="text-muted mb-3 small">ขนาดไฟล์: {formatFileSize(file.size)}</p>
                             <span className="btn btn-sm btn-outline-primary rounded-pill px-3">
                                 <i className="bi bi-arrow-repeat me-1"></i> เปลี่ยนไฟล์
@@ -169,9 +169,9 @@ const KnowledgeBase = () => {
                     ) : (
                         <div className="upload-placeholder text-center p-4">
                             <i className="bi bi-cloud-upload display-4 mb-3 text-muted opacity-50"></i>
-                            <h5 className="fw-bold text-dark mb-2">กดเพื่อเลือกไฟล์ PDF หรือลากไฟล์มาวาง</h5>
+                            <h5 className="fw-bold text-dark mb-2">กดเพื่อเลือกไฟล์ PDF</h5>
                             <div className="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill mt-2">
-                                <i className="bi bi-info-circle me-1"></i> รับเฉพาะ .pdf เท่านั้น (สูงสุด 10MB)
+                                <i className="bi bi-info-circle me-1"></i> เฉพาะ .pdf ไม่เกิน 10MB
                             </div>
                         </div>
                     )}
@@ -188,15 +188,14 @@ const KnowledgeBase = () => {
 
                 <div className="d-grid gap-2 mb-4">
                     <button
-                        className="btn btn-primary btn-lg fw-bold shadow-sm rounded-3"
+                        className="btn btn-main btn-primary shadow-sm"
                         onClick={handleUpload}
                         disabled={!file || isUploading}
-                        style={{ padding: '15px' }}
                     >
                         {isUploading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                กำลังอัปโหลดและประมวลผล...
+                                กำลังประมวลผล...
                             </>
                         ) : (
                             <>
