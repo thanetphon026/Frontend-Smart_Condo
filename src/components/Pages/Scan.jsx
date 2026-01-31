@@ -26,6 +26,7 @@ const Scan = () => {
   });
   const [hasScanned, setHasScanned] = useState(false);
   const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
+  const [manualFile, setManualFile] = useState(null); // Actual file object for manual upload
   const debounceTimerRef = useRef(null);
 
   const cameraInputRef = useRef(null);
@@ -126,48 +127,35 @@ const Scan = () => {
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target.result);
-      setShowPreview(true);
-    };
-    reader.readAsDataURL(file);
+    // [OPTIMIZATION] Create local preview URL - SHOW FORM IMMEDIATELY
+    const localBlobUrl = URL.createObjectURL(file);
+    setPreviewUrl(localBlobUrl);
+    setShowPreview(true);
 
-    // Upload image to get URL (without AI analysis)
-    setLoadingText({ text: 'กำลังอัปโหลดรูปภาพ...', subtext: 'กรุณารอสักครู่' });
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('image', file);
+    // Set only image_url (as blob), leave other fields empty for manual entry
+    setScanData({
+      room_number: '',
+      recipient_name: '',
+      transport: '',
+      tracking_number: '',
+      image_url: localBlobUrl, // Temporarily use blob URL
+      parcel_count: 0
+    });
 
-    try {
-      const response = await apiService.scanImage(formData);
+    setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
+    setHasScanned(true);
+    setScanMethod('manual'); // Mark as manual entry
+    setManualFile(file); // Store file for later upload
 
-      if (response.status === 'success') {
-        // Set only image_url, leave other fields empty for manual entry
-        setScanData({
-          room_number: '',
-          recipient_name: '',
-          transport: '',
-          tracking_number: '',
-          image_url: response.data.image_url || '',
-          parcel_count: 0
-        });
+    setShowResult(true);
 
-        setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
-        setHasScanned(true);
-        setScanMethod('manual'); // Mark as manual entry
+    // Jump to result section immediately
+    setTimeout(() => {
+      document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
 
-        setShowResult(true);
-        document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        alert('อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่');
-      }
-    } catch (error) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
+    // [Cleanup Note] The blob URL is used for preview, 
+    // it will be revoked when the form is reset or component unmounted via handleConfirm/resetForm
   };
 
   // Real-time validation with debouncing
@@ -257,7 +245,7 @@ const Scan = () => {
   };
 
   const handleConfirm = async () => {
-    const { room_number, recipient_name, transport, tracking_number, image_url } = scanData;
+    let { room_number, recipient_name, transport, tracking_number, image_url } = scanData;
 
     if (!room_number && !recipient_name) {
       alert('กรุณาระบุ "เลขห้อง" หรือ "ชื่อผู้รับ" อย่างน้อย 1 อย่าง');
@@ -267,16 +255,32 @@ const Scan = () => {
     setLoadingText({ text: 'กำลังบันทึกข้อมูล...', subtext: 'กำลังส่งแจ้งเตือนไปยังผู้รับ' });
     setLoading(true);
 
-    const payload = {
-      room_number,
-      recipient_name,
-      transport,
-      tracking_number,
-      image_url,
-      scan_method: scanMethod // Include scan method
-    };
-
     try {
+      // [OPTIONAL] Handle deferred image upload for manual import
+      if (scanMethod === 'manual' && manualFile) {
+        setLoadingText({ text: 'กำลังอัปโหลดรูปภาพ...', subtext: 'กรุณารอสักครู่' });
+        const formData = new FormData();
+        formData.append('image', manualFile);
+        formData.append('skip_ai', 'true');
+
+        const uploadRes = await apiService.scanImage(formData);
+        if (uploadRes.status === 'success') {
+          image_url = uploadRes.data.image_url;
+        } else {
+          throw new Error('อัปโหลดรูปภาพไม่สำเร็จ');
+        }
+      }
+
+      setLoadingText({ text: 'กำลังบันทึกข้อมูล...', subtext: 'กำลังส่งแจ้งเตือนไปยังผู้รับ' });
+      const payload = {
+        room_number,
+        recipient_name,
+        transport,
+        tracking_number,
+        image_url,
+        scan_method: scanMethod // Include scan method
+      };
+
       const adminName = localStorage.getItem('admin')
         ? JSON.parse(localStorage.getItem('admin')).name
         : 'Unknown Admin';
@@ -335,6 +339,7 @@ const Scan = () => {
       image_url: '',
       parcel_count: 0
     });
+    setManualFile(null);
     setUserFound({
       exists: false,
       display_name: '',
