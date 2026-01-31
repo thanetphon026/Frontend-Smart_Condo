@@ -449,7 +449,7 @@ const Scan = () => {
             type="button"
             onClick={handleManualClick}
           >
-            <i className="bi bi-pencil-square me-1"></i> ป้อนข้อมูลเอง (กรณี AI อ่านไม่ได้)
+            <i className="bi bi-pencil-square me-1"></i> บันทึกข้อมูลเอง (กรณีระบบไม่พบข้อมูลอัตโนมัติ)
           </button>
         </div>
 
@@ -485,7 +485,7 @@ const Scan = () => {
                 <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
               </h6>
               <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                {scanMethod === 'ai' ? '🤖 AI ประมวลผล' : '✍️ ระบุเอง'}
+                {scanMethod === 'ai' ? '🤖 ระบบอัตโนมัติ' : '✍️ บันทึกข้อมูลเอง'}
               </span>
             </div>
 

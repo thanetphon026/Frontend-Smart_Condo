@@ -60,7 +60,7 @@ const Dashboard = () => {
             </div>
             <div className="row g-3" id="dashboardStats">
               {statCards.map((card) => (
-                <div key={card.key} className="col-md-4 col-sm-6">
+                <div key={card.key} className="col-6 col-sm-4 col-md-3 col-lg-3">
                   <StatCard
                     icon={card.icon}
                     number={stats[card.key] || 0}
@@ -108,22 +108,22 @@ const Dashboard = () => {
                   ) : upcomingParcels.length > 0 ? (
                     upcomingParcels.slice(0, 10).map((parcel, index) => (
                       <tr key={index} className="align-middle">
-                        <td>
+                        <td data-label="ห้อง">
                           <span className="fw-semibold">{escapeHtml(parcel.room_number || '-')}</span>
                         </td>
-                        <td>{escapeHtml(parcel.recipient_name || '-')}</td>
-                        <td>
+                        <td data-label="ผู้รับ">{escapeHtml(parcel.recipient_name || '-')}</td>
+                        <td data-label="ขนส่ง">
                           <span className="badge bg-light text-dark">
                             {escapeHtml(parcel.transport || parcel.courier || '-')}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="ประเภท">
                           {parcel.is_after_hours ?
                             <span className="badge bg-purple-100 text-purple-800" style={{ color: '#6f42c1', backgroundColor: '#e0cffc' }}>นอกเวลา</span>
                             : <span className="badge bg-info bg-opacity-10 text-info">ในเวลา</span>
                           }
                         </td>
-                        <td>
+                        <td data-label="สถานะ">
                           <span className="badge bg-warning text-dark">รอรับ</span>
                         </td>
                       </tr>

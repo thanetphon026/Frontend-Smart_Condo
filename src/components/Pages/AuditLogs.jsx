@@ -116,15 +116,15 @@ const AuditLogs = () => {
               ) : filteredLogs.length > 0 ? (
                 filteredLogs.map((log, index) => (
                   <tr key={index}>
-                    <td className="fw-bold">{escapeHtml(log.performed_by || '-')}</td>
-                    <td>
+                    <td data-label="ผู้ดำเนินการ" className="fw-bold">{escapeHtml(log.performed_by || '-')}</td>
+                    <td data-label="กิจกรรม">
                       <span className={`badge ${getActionColor(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td>{escapeHtml(log.target || '-')}</td>
-                    <td>{formatDateTime(log.timestamp)}</td>
-                    <td className="text-muted small">{escapeHtml(truncateText(log.details, 60))}</td>
+                    <td data-label="เป้าหมาย">{escapeHtml(log.target || '-')}</td>
+                    <td data-label="วันเวลา">{formatDateTime(log.timestamp)}</td>
+                    <td data-label="รายละเอียด" className="text-muted small">{escapeHtml(truncateText(log.details, 60))}</td>
                   </tr>
                 ))
               ) : (

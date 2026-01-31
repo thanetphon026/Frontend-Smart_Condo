@@ -311,15 +311,20 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 767px) {
+
+/* Mobile Portrait (< 576px) */
+@media (max-width: 575px) {
   body {
     font-size: 14px;
     line-height: 1.5;
   }
 
-  h3 {
-    font-size: 20px;
-    margin-bottom: 4px;
+  h3, h4, h5 {
+    font-size: 18px;
+  }
+
+  h6 {
+    font-size: 16px;
   }
 
   .mobile-topbar {
@@ -332,9 +337,10 @@
 
   .sidebar {
     position: fixed;
-    width: 240px;
+    width: 260px;
     min-height: 100vh;
     transform: translateX(-110%);
+    z-index: 1040;
   }
 
   .sidebar.open {
@@ -346,126 +352,208 @@
   }
 
   .content {
-    margin-left: 0;
-  }
-
-  .content-header {
-    padding: 16px 18px;
-    border-radius: 0;
+    margin-left: 0 !important;
+    padding: 12px;
   }
 
   .card-custom {
     padding: 14px;
     border-radius: 14px;
+    margin-bottom: 12px;
   }
 
+  /* Dashboard Stats - 2 per row on mobile portrait */
+  #dashboardStats .col-md-4 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .stat-card {
+    padding: 12px;
+    margin-bottom: 0;
+  }
+
+  .stat-icon {
+    font-size: 1.8rem;
+  }
+
+  .stat-number {
+    font-size: 1.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  /* Upload Areas */
   .upload-area {
-    height: 200px;
+    height: 180px;
   }
 
+  /* Buttons */
   .btn-main {
-    padding: 10px;
+    padding: 10px 16px;
     font-size: 14px;
   }
 
-  .input-group .form-control {
+  .btn {
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  /* Forms */
+  .form-control, .form-select {
     font-size: 14px;
+    min-height: 44px;
   }
 
   .input-group {
     width: 100%;
   }
 
-  .table-parcel thead {
+  /* Tables - Convert to Cards */
+  .table-responsive table:not(.table-sm) thead {
     display: none;
   }
 
-  .table-parcel,
-  .table-parcel tbody,
-  .table-parcel tr,
-  .table-parcel td {
+  .table-responsive table:not(.table-sm),
+  .table-responsive table:not(.table-sm) tbody,
+  .table-responsive table:not(.table-sm) tr,
+  .table-responsive table:not(.table-sm) td {
     display: block;
     width: 100%;
   }
 
-  .table-parcel tr {
-    margin-bottom: 12px;
+  .table-responsive table:not(.table-sm) tr {
+    margin-bottom: 14px;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 10px;
+    padding: 12px;
     background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
-  .table-parcel td {
-    padding: 8px 4px;
+  .table-responsive table:not(.table-sm) td {
+    padding: 10px 8px;
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
     font-size: 14px;
+    border: none;
   }
 
-  .table-parcel td::before {
+  .table-responsive table:not(.table-sm) td::before {
     content: attr(data-label);
     font-weight: 600;
     color: #475569;
-    flex: 0 0 90px;
+    flex: 0 0 100px;
+    font-size: 13px;
   }
 
-  .parcel-thumb {
+  /* Image Thumbnails */
+  .parcel-thumb,
+  .complaint-thumb {
     width: 100%;
-    height: 160px;
+    height: auto;
+    max-height: 180px;
     object-fit: cover;
     border-radius: 10px;
   }
 
-  .table-complaint thead {
+  /* Modals */
+  .modal-dialog {
+    margin: 8px;
+    max-width: calc(100% - 16px);
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+/* Mobile Landscape & Small Tablets (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .mobile-topbar {
+    display: flex;
+  }
+
+  .content-header {
     display: none;
   }
 
-  .table-complaint,
-  .table-complaint tbody,
-  .table-complaint tr,
-  .table-complaint td {
-    display: block;
-    width: 100%;
+  .sidebar {
+    transform: translateX(-110%);
   }
 
-  .table-complaint tr {
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 10px;
-    background: #fff;
+  .sidebar.open {
+    transform: translateX(0);
   }
 
-  .table-complaint td {
-    padding: 8px 4px;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 14px;
+  .content {
+    margin-left: 0 !important;
+    padding: 16px;
   }
 
-  .table-complaint td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #475569;
-    flex: 0 0 110px;
-  }
-
-  .complaint-thumb {
-    width: 100%;
-    height: 180px;
+  /* Dashboard Stats - 3 per row on landscape */
+  #dashboardStats .col-md-4 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
   }
 
   .stat-card {
-    padding: 15px;
-    margin-bottom: 10px;
+    padding: 14px;
   }
 
-  .stat-number {
-    font-size: 1.5rem;
+  .upload-area {
+    height: 220px;
   }
+}
+
+/* Tablet Portrait (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .sidebar {
+    transform: translateX(-110%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-topbar {
+    display: flex;
+  }
+
+  .content-header {
+    display: none;
+  }
+
+  .content {
+    margin-left: 0 !important;
+    padding: 20px;
+  }
+
+  /* Dashboard Stats - 3 per row */
+  #dashboardStats .col-md-4 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+  }
+
+  .card-custom {
+    padding: 16px;
+  }
+}
+
+/* Tablet Landscape (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  /* Sidebar visible, content with proper margin */
+  .content {
+    margin-left: 250px;
+    padding: 24px;
+  }
+
+  /* Dashboard Stats - Default 4 per row looks good */
 }
 
 /* Bootstrap overrides */
@@ -508,21 +596,38 @@
   opacity: 0.5;
 }
 
-/* Fix for table responsive in mobile */
+/* Additional Mobile Fixes */
 @media (max-width: 767px) {
   .table-responsive {
-    overflow-x: auto;
+    overflow-x: visible;
     -webkit-overflow-scrolling: touch;
   }
 
-  .table-parcel td,
-  .table-complaint td {
-    padding: 10px 8px !important;
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 4px;
   }
 
   .btn-group .btn {
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 13px;
+    padding: 8px 12px;
+    flex: 1 1 auto;
+  }
+
+  /* Stack buttons vertically on very small screens */
+  .d-grid.gap-2 {
+    gap: 10px !important;
+  }
+
+  /* Form floating labels */
+  .form-floating > label {
+    font-size: 13px;
+  }
+
+  /* Alert messages */
+  .alert {
+    font-size: 13px;
+    padding: 10px 12px;
   }
 }
 

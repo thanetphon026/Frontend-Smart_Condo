@@ -90,16 +90,16 @@ const Users = () => {
               ) : users.length > 0 ? (
                 users.map((user, index) => (
                   <tr key={user.id || index}>
-                    <td>{escapeHtml(user.room_number || '-')}</td>
-                    <td>{escapeHtml(user.name || '-')}</td>
-                    <td>{escapeHtml(user.display_name || '-')}</td>
-                    <td>{escapeHtml(user.phone_number || '-')}</td>
-                    <td>
+                    <td data-label="ห้อง">{escapeHtml(user.room_number || '-')}</td>
+                    <td data-label="ชื่อ-นามสกุล">{escapeHtml(user.name || '-')}</td>
+                    <td data-label="ชื่อในไลน์">{escapeHtml(user.display_name || '-')}</td>
+                    <td data-label="เบอร์โทร">{escapeHtml(user.phone_number || '-')}</td>
+                    <td data-label="แพลตฟอร์ม">
                       <span className={`badge ${user.platform?.toLowerCase().includes('line') ? 'bg-success' : 'bg-primary'} bg-opacity-10 ${user.platform?.toLowerCase().includes('line') ? 'text-success' : 'text-primary'}`}>
                         {escapeHtml(user.platform || '-')}
                       </span>
                     </td>
-                    <td className="text-nowrap">{formatDateTime(user.last_active_at || user.last_active)}</td>
+                    <td data-label="ใช้งานล่าสุด" className="text-nowrap">{formatDateTime(user.last_active_at || user.last_active)}</td>
                   </tr>
                 ))
               ) : (

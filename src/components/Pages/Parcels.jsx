@@ -257,7 +257,7 @@ const Parcels = () => {
               ) : parcels.length > 0 ? (
                 parcels.map((parcel, index) => (
                   <tr key={parcel.id || index}>
-                    <td>
+                    <td data-label="รูปภาพ">
                       {parcel.image_url ? (
                         <img
                           src={parcel.image_url}
@@ -271,28 +271,28 @@ const Parcels = () => {
                         <div className="text-muted small">ไม่มีรูป</div>
                       )}
                     </td>
-                    <td>{escapeHtml(parcel.room_number || '-')}</td>
-                    <td>{escapeHtml(parcel.recipient_name || '-')}</td>
-                    <td className="fw-bold text-primary text-nowrap">
+                    <td data-label="ห้อง">{escapeHtml(parcel.room_number || '-')}</td>
+                    <td data-label="ผู้รับ">{escapeHtml(parcel.recipient_name || '-')}</td>
+                    <td data-label="รหัสรับของ" className="fw-bold text-primary text-nowrap">
                       {escapeHtml(parcel.pin || '-')}
                     </td>
-                    <td>{escapeHtml(parcel.transport || parcel.courier || '-')}</td>
-                    <td className="text-nowrap">{escapeHtml(parcel.tracking_number || '-')}</td>
-                    <td className="text-center">
+                    <td data-label="ขนส่ง">{escapeHtml(parcel.transport || parcel.courier || '-')}</td>
+                    <td data-label="Tracking" className="text-nowrap">{escapeHtml(parcel.tracking_number || '-')}</td>
+                    <td data-label="วิธีนำเข้า" className="text-center">
                       {parcel.scan_method === 'manual' ? (
-                        <span className="badge bg-warning bg-opacity-10 text-warning" title="ระบุข้อมูลเอง">
-                          ✍️ ระบุเอง
+                        <span className="badge bg-warning bg-opacity-10 text-warning" title="บันทึกข้อมูลเอง">
+                          ✍️ บันทึกข้อมูลเอง
                         </span>
                       ) : (
-                        <span className="badge bg-success bg-opacity-10 text-success" title="AI ประมวลผล">
-                          🤖 AI
+                        <span className="badge bg-success bg-opacity-10 text-success" title="ระบบอัตโนมัติ (AI)">
+                          🤖 ระบบอัตโนมัติ
                         </span>
                       )}
                     </td>
-                    <td className="text-nowrap small">
+                    <td data-label="เวลา" className="text-nowrap small">
                       {formatDateTime(parcel.timestamp)}
                     </td>
-                    <td>
+                    <td data-label="จัดการ">
                       {activeTab !== 'after-hours' && (
                         <button
                           className="btn btn-success btn-sm w-100"

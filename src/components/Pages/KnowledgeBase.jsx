@@ -244,25 +244,25 @@ const KnowledgeBase = () => {
                             ) : documents.length > 0 ? (
                                 documents.map((doc, index) => (
                                     <tr key={index}>
-                                        <td className="ps-3 text-center text-muted">{index + 1}</td>
-                                        <td>
+                                        <td data-label="#" className="ps-3 text-center text-muted">{index + 1}</td>
+                                        <td data-label="ชื่อเอกสาร">
                                             <div className="d-flex align-items-center">
                                                 <i className="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
                                                 <span className="fw-medium text-dark text-truncate" style={{ maxWidth: '300px' }}>{doc.filename}</span>
                                             </div>
                                         </td>
-                                        <td className="text-center">
+                                        <td data-label="ส่วน" className="text-center">
                                             <span className="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">
                                                 {doc.chunks}
                                             </span>
                                         </td>
-                                        <td className="text-center">
+                                        <td data-label="ประเภท" className="text-center">
                                             <span className="text-muted small">
                                                 <i className="bi bi-hdd-network me-1"></i>
                                                 Vector Storage
                                             </span>
                                         </td>
-                                        <td className="text-end pe-4">
+                                        <td data-label="จัดการ" className="text-end pe-4">
                                             <button
                                                 className="btn btn-outline-danger btn-sm rounded-circle border-0"
                                                 onClick={() => handleDelete(doc.filename)}
