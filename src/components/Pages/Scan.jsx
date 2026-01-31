@@ -593,8 +593,9 @@ const Scan = () => {
                   </div>
                 </div>
                 <button
-                  className="btn btn-sm btn-success bg-opacity-10 text-success border-0 rounded-pill px-3"
+                  className="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold"
                   onClick={handleAutofill}
+                  style={{ fontSize: '0.8rem' }}
                   title="ใช้ชื่อและเลขห้องนี้"
                 >
                   <i className="bi bi-clipboard-check me-1"></i> ใช้ข้อมูลนี้
