@@ -241,6 +241,7 @@ const Parcels = () => {
                 <th>PIN</th>
                 <th>ขนส่ง</th>
                 <th>Tracking</th>
+                <th style={{ width: '100px' }}>วิธีนำเข้า</th>
                 <th style={{ width: '140px' }}>เวลาที่รับ</th>
                 <th style={{ width: '120px' }}></th>
               </tr>
@@ -248,7 +249,7 @@ const Parcels = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted">
+                  <td colSpan="9" className="text-center text-muted">
                     <div className="spinner-border spinner-border-sm me-2"></div>
                     กำลังโหลดข้อมูลพัสดุ...
                   </td>
@@ -277,6 +278,17 @@ const Parcels = () => {
                     </td>
                     <td>{escapeHtml(parcel.transport || parcel.courier || '-')}</td>
                     <td className="text-nowrap">{escapeHtml(parcel.tracking_number || '-')}</td>
+                    <td className="text-center">
+                      {parcel.scan_method === 'manual' ? (
+                        <span className="badge bg-warning bg-opacity-10 text-warning" title="ระบุข้อมูลเอง">
+                          ✍️ ระบุเอง
+                        </span>
+                      ) : (
+                        <span className="badge bg-success bg-opacity-10 text-success" title="AI ประมวลผล">
+                          🤖 AI
+                        </span>
+                      )}
+                    </td>
                     <td className="text-nowrap small">
                       {formatDateTime(parcel.timestamp)}
                     </td>
@@ -294,7 +306,7 @@ const Parcels = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted">
+                  <td colSpan="9" className="text-center text-muted">
                     {searchTerm ? 'ไม่พบพัสดุที่ตรงกับการค้นหา' : 'ไม่พบพัสดุคงค้าง'}
                   </td>
                 </tr>

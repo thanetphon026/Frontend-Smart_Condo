@@ -165,6 +165,14 @@ class ApiService {
     return this.request('admin/users');
   }
 
+  async searchUser(data) {
+    return this.request('admin/users/search', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+
   // --- PARCELS ---
   async getParcels(type = 'all') {
     return this.request(`admin/parcels?type=${type}`);

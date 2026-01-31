@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import { apiService } from '../../services/api';
@@ -25,9 +25,12 @@ const Scan = () => {
     last_name: ''
   });
   const [hasScanned, setHasScanned] = useState(false);
+  const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
+  const debounceTimerRef = useRef(null);
 
   const cameraInputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const manualFileInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
     if (!file) return;
@@ -77,6 +80,7 @@ const Scan = () => {
         const foundData = response.data.user_found || { exists: false };
         setUserFound(foundData);
         setHasScanned(true);
+        setScanMethod('ai'); // Mark as AI scanned
 
         if (foundData.exists) {
           // Add validation classes
@@ -103,6 +107,134 @@ const Scan = () => {
       setLoading(false);
     }
   };
+
+  const handleManualImport = async (file) => {
+    if (!file) return;
+
+    // Validate file
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'heic', 'heif'];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert(`นามสกุลไฟล์ไม่รองรับ (รองรับ: ${allowedExtensions.join(', ')})`);
+      return;
+    }
+
+    if (file.size > maxFileSize) {
+      alert('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 10MB)');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreviewUrl(e.target.result);
+      setShowPreview(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image to get URL (without AI analysis)
+    setLoadingText({ text: 'กำลังอัปโหลดรูปภาพ...', subtext: 'กรุณารอสักครู่' });
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await apiService.scanImage(formData);
+
+      if (response.status === 'success') {
+        // Set only image_url, leave other fields empty for manual entry
+        setScanData({
+          room_number: '',
+          recipient_name: '',
+          transport: '',
+          tracking_number: '',
+          image_url: response.data.image_url || '',
+          parcel_count: 0
+        });
+
+        setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
+        setHasScanned(true);
+        setScanMethod('manual'); // Mark as manual entry
+
+        setShowResult(true);
+        document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        alert('อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่');
+      }
+    } catch (error) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Real-time validation with debouncing
+  const validateUserRealtime = useCallback(async (room, name) => {
+    try {
+      const response = await apiService.searchUser({
+        room_number: room,
+        recipient_name: name
+      });
+
+      if (response.status === 'success') {
+        const foundData = response.data;
+        setUserFound(foundData);
+
+        // Update parcel count
+        setScanData(prev => ({ ...prev, parcel_count: foundData.parcel_count || 0 }));
+
+        // Update validation classes
+        if (foundData.exists) {
+          document.getElementById('room_number')?.classList.add('is-valid');
+          document.getElementById('room_number')?.classList.remove('is-invalid');
+          document.getElementById('recipient_name')?.classList.add('is-valid');
+          document.getElementById('recipient_name')?.classList.remove('is-invalid');
+        } else {
+          document.getElementById('room_number')?.classList.add('is-invalid');
+          document.getElementById('room_number')?.classList.remove('is-valid');
+          document.getElementById('recipient_name')?.classList.add('is-invalid');
+          document.getElementById('recipient_name')?.classList.remove('is-valid');
+        }
+      }
+    } catch (error) {
+      console.error('Validation error:', error);
+    }
+  }, []);
+
+  // Debounced input change handler
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setScanData(prev => ({ ...prev, [id]: value }));
+
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounce timer for real-time validation
+    debounceTimerRef.current = setTimeout(() => {
+      const currentData = { ...scanData, [id]: value };
+      if (currentData.room_number || currentData.recipient_name) {
+        validateUserRealtime(currentData.room_number, currentData.recipient_name);
+      } else {
+        // Clear validation if both fields empty
+        setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
+        document.getElementById('room_number')?.classList.remove('is-valid', 'is-invalid');
+        document.getElementById('recipient_name')?.classList.remove('is-valid', 'is-invalid');
+      }
+    }, 500); // 500ms debounce
+  };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCameraClick = () => {
     cameraInputRef.current?.click();
@@ -140,7 +272,8 @@ const Scan = () => {
       recipient_name,
       transport,
       tracking_number,
-      image_url
+      image_url,
+      scan_method: scanMethod // Include scan method
     };
 
     try {
@@ -221,9 +354,14 @@ const Scan = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setScanData(prev => ({ ...prev, [id]: value }));
+  const handleManualClick = () => {
+    manualFileInputRef.current?.click();
+  };
+
+  const handleManualFileChange = (e) => {
+    if (e.target.files.length) {
+      handleManualImport(e.target.files[0]);
+    }
   };
 
   return (
@@ -272,6 +410,16 @@ const Scan = () => {
           </button>
         </div>
 
+        <div className="mt-2">
+          <button
+            className="btn btn-outline-warning btn-main w-100"
+            type="button"
+            onClick={handleManualClick}
+          >
+            <i className="bi bi-pencil-square me-1"></i> ป้อนข้อมูลเอง (กรณี AI อ่านไม่ได้)
+          </button>
+        </div>
+
         <input
           type="file"
           accept=".png,.jpg,.jpeg,.heic,.heif"
@@ -287,6 +435,13 @@ const Scan = () => {
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
+        <input
+          type="file"
+          accept=".png,.jpg,.jpeg,.heic,.heif"
+          ref={manualFileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleManualFileChange}
+        />
       </div>
 
       {showResult && (
@@ -296,7 +451,9 @@ const Scan = () => {
               <h6 className="fw-bold text-secondary mb-0">
                 <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
               </h6>
-              <span className="badge bg-success bg-opacity-10 text-success">AI Processed</span>
+              <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
+                {scanMethod === 'ai' ? '🤖 AI ประมวลผล' : '✍️ ระบุเอง'}
+              </span>
             </div>
 
             <div className="row g-2">
