@@ -485,7 +485,7 @@ const Scan = () => {
                 <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
               </h6>
               <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                {scanMethod === 'ai' ? '🤖 ระบบอัตโนมัติ' : '✍️ บันทึกข้อมูลเอง'}
+                {scanMethod === 'ai' ? 'ระบบอัตโนมัติ' : 'บันทึกข้อมูลเอง'}
               </span>
             </div>
 

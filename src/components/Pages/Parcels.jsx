@@ -281,11 +281,11 @@ const Parcels = () => {
                     <td data-label="วิธีนำเข้า" className="text-center">
                       {parcel.scan_method === 'manual' ? (
                         <span className="badge bg-warning bg-opacity-10 text-warning" title="บันทึกข้อมูลเอง">
-                          ✍️ บันทึกข้อมูลเอง
+                        บันทึกข้อมูลเอง
                         </span>
                       ) : (
                         <span className="badge bg-success bg-opacity-10 text-success" title="ระบบอัตโนมัติ (AI)">
-                          🤖 ระบบอัตโนมัติ
+                        ระบบอัตโนมัติ
                         </span>
                       )}
                     </td>
