@@ -101,10 +101,7 @@ const BackOfficePage = () => {
             onClose={() => setSidebarOpen(false)}
           />
 
-          <div className="content" style={{
-            marginLeft: window.innerWidth >= 768 ? (sidebarOpen ? '250px' : '250px') : '0',
-            transition: 'margin-left 0.3s ease'
-          }}>
+          <div className="content">
             <Header
               title={currentHeader.title}
               subtitle={currentHeader.subtitle}

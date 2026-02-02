@@ -16,10 +16,10 @@ const Header = ({ title, subtitle, adminName, onMenuToggle, onLogout }) => {
       </div>
 
       {/* Desktop Header */}
-      <div className="content-header d-none d-md-block">
+      <div className="content-header">
         <div className="d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-2">
-            <button className="btn btn-light d-md-none" onClick={onMenuToggle}>
+            <button className="btn btn-light" onClick={onMenuToggle}>
               <i className="bi bi-list"></i>
             </button>
             <h3 className="mb-1" id="pageTitle">
