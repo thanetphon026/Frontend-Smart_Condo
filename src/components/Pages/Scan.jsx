@@ -100,6 +100,19 @@ const Scan = () => {
     };
     reader.readAsDataURL(file);
 
+    // [NEW] Clear previous scan data before starting new one
+    setScanData({
+      room_number: '',
+      recipient_name: '',
+      transport: '',
+      tracking_number: '',
+      image_url: '',
+      parcel_count: 0
+    });
+    setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
+    setHasScanned(false);
+    setShowResult(false);
+
     // Upload to API
     setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
     setLoading(true);
