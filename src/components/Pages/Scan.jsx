@@ -42,8 +42,8 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1280; // Optimized for Gemini analysis
-          const MAX_HEIGHT = 1280;
+          const MAX_WIDTH = 800; // Even faster for Gemini
+          const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
 
