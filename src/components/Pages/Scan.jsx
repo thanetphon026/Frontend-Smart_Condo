@@ -33,10 +33,51 @@ const Scan = () => {
   const fileInputRef = useRef(null);
   const manualFileInputRef = useRef(null);
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1280; // Optimized for Gemini analysis
+          const MAX_HEIGHT = 1280;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            }));
+          }, 'image/jpeg', 0.8); // 80% quality is plenty for OCR
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleImageUpload = async (file) => {
     if (!file) return;
 
-    // [NEW] Client-side validation
+    // Client-side validation
     const allowedExtensions = ['png', 'jpg', 'jpeg', 'heic', 'heif'];
     const maxFileSize = 10 * 1024 * 1024; // 10MB
     const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -60,12 +101,17 @@ const Scan = () => {
     reader.readAsDataURL(file);
 
     // Upload to API
-    setLoadingText({ text: 'กำลังวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
+    setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
     setLoading(true);
-    const formData = new FormData();
-    formData.append('image', file);
 
     try {
+      // [OPTIMIZATION] Compress image before upload
+      const processedFile = await compressImage(file);
+      console.log(`Original: ${file.size / 1024}KB, Compressed: ${processedFile.size / 1024}KB`);
+
+      const formData = new FormData();
+      formData.append('image', processedFile);
+
       const response = await apiService.scanImage(formData);
 
       if (response.status === 'success') {
