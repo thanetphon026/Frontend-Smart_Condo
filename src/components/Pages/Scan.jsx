@@ -42,8 +42,8 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1024; // Balanced speed and accuracy
-          const MAX_HEIGHT = 1024;
+          const MAX_WIDTH = 900; // Even faster while maintaining Thai readability
+          const MAX_HEIGHT = 900;
           let width = img.width;
           let height = img.height;
 
