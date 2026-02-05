@@ -55,7 +55,7 @@ const Dashboard = () => {
               </h5>
               <div className="text-muted small">
                 <i className="bi bi-arrow-clockwise me-1"></i>
-                อัปเดตแบบเรียลไทม์
+                อัปเดตแบบเรียลไทม์ เทส
               </div>
             </div>
             <div className="row g-3" id="dashboardStats">
