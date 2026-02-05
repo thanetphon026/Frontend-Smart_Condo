@@ -27,6 +27,7 @@ const Scan = () => {
   const [hasScanned, setHasScanned] = useState(false);
   const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
   const [manualFile, setManualFile] = useState(null); // Actual file object for manual upload
+  const [scanTime, setScanTime] = useState(null); // [NEW] Scan timestamp
   const debounceTimerRef = useRef(null);
 
   const cameraInputRef = useRef(null);
@@ -112,6 +113,7 @@ const Scan = () => {
     setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
     setHasScanned(false);
     setShowResult(false);
+    setScanTime(null);
 
     // Upload to API
     setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
@@ -141,6 +143,11 @@ const Scan = () => {
         setUserFound(foundData);
         setHasScanned(true);
         setScanMethod('ai'); // Mark as AI scanned
+
+        // Set scan time
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        setScanTime(timeString);
 
         if (foundData.exists) {
           // Add validation classes
@@ -205,6 +212,11 @@ const Scan = () => {
     setHasScanned(true);
     setScanMethod('manual'); // Mark as manual entry
     setManualFile(file); // Store file for later upload
+
+    // Set scan time
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    setScanTime(timeString);
 
     setShowResult(true);
 
@@ -435,6 +447,7 @@ const Scan = () => {
       last_name: ''
     });
     setHasScanned(false);
+    setScanTime(null);
 
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -543,9 +556,16 @@ const Scan = () => {
               <h6 className="fw-bold text-secondary mb-0">
                 <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
               </h6>
-              <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                {scanMethod === 'ai' ? 'ระบบอัตโนมัติ' : 'บันทึกข้อมูลเอง'}
-              </span>
+              <div className="text-end">
+                <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
+                  {scanMethod === 'ai' ? 'ระบบอัตโนมัติ' : 'บันทึกข้อมูลเอง'}
+                </span>
+                {scanTime && (
+                  <div className="text-muted mt-1" style={{ fontSize: '0.75rem' }}>
+                    <i className="bi bi-clock me-1"></i>เวลา: {scanTime} น.
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="row g-2">
