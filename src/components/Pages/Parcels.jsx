@@ -1,704 +1,345 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import LoadingOverlay from '../UI/LoadingOverlay';
+import SearchBox from '../UI/SearchBox';
+import Modal from '../UI/Modal';
+import ConfirmModal from '../UI/ConfirmModal';
 import { apiService } from '../../services/api';
+import { escapeHtml, formatDateTime } from '../../utils/helpers';
+import { useData } from '../../contexts/DataContext';
 
-const Scan = () => {
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
-  const [showResult, setShowResult] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState({ text: 'กำลังวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
-  const [scanData, setScanData] = useState({
-    room_number: '',
-    recipient_name: '',
-    transport: '',
-    tracking_number: '',
-    image_url: '',
-    parcel_count: 0
-  });
-  const [userFound, setUserFound] = useState({
-    exists: false,
-    display_name: '',
-    room_number: '',
-    first_name: '',
-    last_name: ''
-  });
-  const [hasScanned, setHasScanned] = useState(false);
-  const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
-  const [manualFile, setManualFile] = useState(null); // Actual file object for manual upload
-  const [scanTime, setScanTime] = useState(0); // [NEW] Time taken for AI scan in seconds
-  const debounceTimerRef = useRef(null);
-  const scanStartTimeRef = useRef(null); // [NEW] Track scan start time
 
-  const cameraInputRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const manualFileInputRef = useRef(null);
+const RealTimeClock = () => {
+  const { getNow } = useData();
+  const [time, setTime] = useState(getNow());
 
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1024; // Balanced speed and accuracy
-          const MAX_HEIGHT = 1024;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            resolve(new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            }));
-          }, 'image/jpeg', 0.8); // 80% quality is plenty for OCR
-        };
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-
-    // Client-side validation
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'heic', 'heif'];
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-
-    if (!allowedExtensions.includes(fileExtension)) {
-      alert(`นามสกุลไฟล์ไม่รองรับ (รองรับ: ${allowedExtensions.join(', ')})`);
-      return;
-    }
-
-    if (file.size > maxFileSize) {
-      alert('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 10MB)');
-      return;
-    }
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target.result);
-      setShowPreview(true);
-    };
-    reader.readAsDataURL(file);
-
-    // [NEW] Clear previous scan data before starting new one
-    setScanData({
-      room_number: '',
-      recipient_name: '',
-      transport: '',
-      tracking_number: '',
-      image_url: '',
-      parcel_count: 0
-    });
-    setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
-    setHasScanned(false);
-    setShowResult(false);
-    setScanTime(0);
-
-    // Upload to API
-    setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
-    setLoading(true);
-    scanStartTimeRef.current = Date.now(); // Start timer
-
-    try {
-      // [OPTIMIZATION] Compress image before upload
-      const processedFile = await compressImage(file);
-      console.log(`Original: ${file.size / 1024}KB, Compressed: ${processedFile.size / 1024}KB`);
-
-      const formData = new FormData();
-      formData.append('image', processedFile);
-
-      const response = await apiService.scanImage(formData);
-
-      if (response.status === 'success') {
-        // Calculate scan time
-        const elapsedTime = ((Date.now() - scanStartTimeRef.current) / 1000).toFixed(2);
-        setScanTime(parseFloat(elapsedTime));
-
-        setScanData({
-          room_number: response.data.room_number !== "-" ? response.data.room_number : "",
-          recipient_name: response.data.recipient_name !== "-" ? response.data.recipient_name : "",
-          transport: response.data.transport !== "-" ? response.data.transport : "",
-          tracking_number: response.data.tracking_number !== "-" ? response.data.tracking_number : "",
-          image_url: response.data.image_url || '',
-          parcel_count: response.data.parcel_count || 0
-        });
-
-        const foundData = response.data.user_found || { exists: false };
-        setUserFound(foundData);
-        setHasScanned(true);
-        setScanMethod('ai'); // Mark as AI scanned
-
-        if (foundData.exists) {
-          // Add validation classes
-          document.getElementById('room_number')?.classList.add('is-valid');
-          document.getElementById('room_number')?.classList.remove('is-invalid');
-          document.getElementById('recipient_name')?.classList.add('is-valid');
-          document.getElementById('recipient_name')?.classList.remove('is-invalid');
-        } else {
-          document.getElementById('room_number')?.classList.add('is-invalid');
-          document.getElementById('room_number')?.classList.remove('is-valid');
-          document.getElementById('recipient_name')?.classList.add('is-invalid');
-          document.getElementById('recipient_name')?.classList.remove('is-valid');
-        }
-
-        setShowResult(true);
-        // Scroll to result section
-        document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        alert('AI อ่านข้อมูลไม่ได้ กรุณาลองใหม่');
-      }
-    } catch (error) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleManualImport = async (file) => {
-    if (!file) return;
-
-    // Validate file
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'heic', 'heif'];
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-
-    if (!allowedExtensions.includes(fileExtension)) {
-      alert(`นามสกุลไฟล์ไม่รองรับ (รองรับ: ${allowedExtensions.join(', ')})`);
-      return;
-    }
-
-    if (file.size > maxFileSize) {
-      alert('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 10MB)');
-      return;
-    }
-
-    // [OPTIMIZATION] Create local preview URL - SHOW FORM IMMEDIATELY
-    const localBlobUrl = URL.createObjectURL(file);
-    setPreviewUrl(localBlobUrl);
-    setShowPreview(true);
-
-    // Set only image_url (as blob), leave other fields empty for manual entry
-    setScanData({
-      room_number: '',
-      recipient_name: '',
-      transport: '',
-      tracking_number: '',
-      image_url: localBlobUrl, // Temporarily use blob URL
-      parcel_count: 0
-    });
-
-    setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
-    setHasScanned(true);
-    setScanMethod('manual'); // Mark as manual entry
-    setManualFile(file); // Store file for later upload
-    setScanTime(0); // Reset scan time for manual
-
-    setShowResult(true);
-
-    // Jump to result section immediately
-    setTimeout(() => {
-      document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-
-    // [Cleanup Note] The blob URL is used for preview, 
-    // it will be revoked when the form is reset or component unmounted via handleConfirm/resetForm
-  };
-
-  // Real-time validation with debouncing
-  const validateUserRealtime = useCallback(async (room, name) => {
-    try {
-      const response = await apiService.searchUser({
-        room_number: room,
-        recipient_name: name
-      });
-
-      if (response.status === 'success') {
-        const foundData = response.data;
-        setUserFound(foundData);
-
-        // Update parcel count
-        setScanData(prev => ({ ...prev, parcel_count: foundData.parcel_count || 0 }));
-
-        // Update validation classes
-        if (foundData.exists) {
-          document.getElementById('room_number')?.classList.add('is-valid');
-          document.getElementById('room_number')?.classList.remove('is-invalid');
-          document.getElementById('recipient_name')?.classList.add('is-valid');
-          document.getElementById('recipient_name')?.classList.remove('is-invalid');
-        } else {
-          document.getElementById('room_number')?.classList.add('is-invalid');
-          document.getElementById('room_number')?.classList.remove('is-valid');
-          document.getElementById('recipient_name')?.classList.add('is-invalid');
-          document.getElementById('recipient_name')?.classList.remove('is-valid');
-        }
-      }
-    } catch (error) {
-      console.error('Validation error:', error);
-    }
-  }, []);
-
-  // Debounced input change handler
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setScanData(prev => ({ ...prev, [id]: value }));
-
-    // Clear previous debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new debounce timer for real-time validation
-    debounceTimerRef.current = setTimeout(() => {
-      const currentData = { ...scanData, [id]: value };
-      if (currentData.room_number || currentData.recipient_name) {
-        validateUserRealtime(currentData.room_number, currentData.recipient_name);
-      } else {
-        // Clear validation if both fields empty
-        setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
-        document.getElementById('room_number')?.classList.remove('is-valid', 'is-invalid');
-        document.getElementById('recipient_name')?.classList.remove('is-valid', 'is-invalid');
-      }
-    }, 500); // 500ms debounce
-  };
-
-  // Cleanup debounce timer on unmount
   useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleAutofill = () => {
-    if (userFound.exists) {
-      setScanData(prev => ({
-        ...prev,
-        room_number: userFound.room_number,
-        recipient_name: `${userFound.first_name || ''} ${userFound.last_name || ''}`.trim()
-      }));
-
-      // Update validation classes
-      setTimeout(() => {
-        document.getElementById('room_number')?.classList.add('is-valid');
-        document.getElementById('room_number')?.classList.remove('is-invalid');
-        document.getElementById('recipient_name')?.classList.add('is-valid');
-        document.getElementById('recipient_name')?.classList.remove('is-invalid');
-      }, 0);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'ใช้ข้อมูลจากระบบ',
-        text: `อัปเดตข้อมูลเป็น คุณ${userFound.first_name} เรียบร้อยแล้ว`,
-        timer: 1500,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-      });
-    }
-  };
-
-  const handleCameraClick = () => {
-    cameraInputRef.current?.click();
-  };
-
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleCameraChange = (e) => {
-    if (e.target.files.length) {
-      handleImageUpload(e.target.files[0]);
-    }
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files.length) {
-      handleImageUpload(e.target.files[0]);
-    }
-  };
-
-  const handleConfirm = async () => {
-    let { room_number, recipient_name, transport, tracking_number, image_url } = scanData;
-
-    if (!room_number && !recipient_name) {
-      alert('กรุณาระบุ "เลขห้อง" หรือ "ชื่อผู้รับ" อย่างน้อย 1 อย่าง');
-      return;
-    }
-
-    setLoadingText({ text: 'กำลังบันทึกข้อมูล...', subtext: 'กำลังส่งแจ้งเตือนไปยังผู้รับ' });
-    setLoading(true);
-
-    try {
-      // [OPTIONAL] Handle deferred image upload for manual import
-      if (scanMethod === 'manual' && manualFile) {
-        setLoadingText({ text: 'กำลังอัปโหลดรูปภาพ...', subtext: 'กรุณารอสักครู่' });
-        const formData = new FormData();
-        formData.append('image', manualFile);
-        formData.append('skip_ai', 'true');
-
-        const uploadRes = await apiService.scanImage(formData);
-        if (uploadRes.status === 'success') {
-          image_url = uploadRes.data.image_url;
-        } else {
-          throw new Error('อัปโหลดรูปภาพไม่สำเร็จ');
-        }
-      }
-
-      setLoadingText({ text: 'กำลังบันทึกข้อมูล...', subtext: 'กำลังส่งแจ้งเตือนไปยังผู้รับ' });
-      const payload = {
-        room_number,
-        recipient_name,
-        transport,
-        tracking_number,
-        image_url,
-        scan_method: scanMethod // Include scan method
-      };
-
-      const adminName = localStorage.getItem('admin')
-        ? JSON.parse(localStorage.getItem('admin')).name
-        : 'Unknown Admin';
-
-      const response = await apiService.confirmParcel(payload, adminName);
-
-      if (response.status === 'success' || response.status === 'saved') {
-        Swal.fire({
-          icon: 'success',
-          title: '✅ บันทึกและส่งแจ้งเตือนสำเร็จ',
-          html: `
-            <div class="text-start">
-              <p class="mb-1"><b>🏠 ห้อง:</b> ${room_number}</p>
-              <p class="mb-1"><b>👤 ชื่อผู้รับ:</b> ${recipient_name}</p>
-              <p class="mb-1"><b>🚚 ขนส่ง:</b> ${transport}</p>
-              <p class="mb-1"><b>📦 เลขพัสดุ:</b> ${tracking_number}</p>
-              <hr class="my-2" />
-              <h4 class="text-center text-primary fw-bold mb-0">PIN: ${response.pin}</h4>
-            </div>
-          `,
-          timer: 3000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          willClose: () => {
-            resetForm();
-          }
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'บันทึกไม่สำเร็จ',
-          text: response.message || 'ไม่ทราบสาเหตุ'
-        });
-      }
-    } catch (error) {
-      console.error("Scan confirm error:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: error.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setPreviewUrl('');
-    setShowPreview(false);
-    setShowResult(false);
-    setScanData({
-      room_number: '',
-      recipient_name: '',
-      transport: '',
-      tracking_number: '',
-      image_url: '',
-      parcel_count: 0
-    });
-    setManualFile(null);
-    setUserFound({
-      exists: false,
-      display_name: '',
-      room_number: '',
-      first_name: '',
-      last_name: ''
-    });
-    setHasScanned(false);
-    setScanTime(0);
-
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-    if (fileInputRef.current) fileInputRef.current.value = '';
-
-    // Remove validation classes
-    document.getElementById('room_number')?.classList.remove('is-valid', 'is-invalid');
-    document.getElementById('recipient_name')?.classList.remove('is-valid', 'is-invalid');
-
-    window.scrollTo(0, 0);
-  };
-
-  const handleManualClick = () => {
-    manualFileInputRef.current?.click();
-  };
-
-  const handleManualFileChange = (e) => {
-    if (e.target.files.length) {
-      handleManualImport(e.target.files[0]);
-    }
-  };
+    const timer = setInterval(() => setTime(getNow()), 1000);
+    return () => clearInterval(timer);
+  }, [getNow]);
 
   return (
-    <div id="scan">
-      {loading && <LoadingOverlay text={loadingText.text} subtext={loadingText.subtext} />}
-
-      <div className="card-custom mb-3">
-        <h5 className="text-secondary mb-3">
-          <i className="bi bi-camera me-2"></i> ถ่ายรูปหรืออัปโหลดพัสดุ
-        </h5>
-
-        <div
-          className="upload-area d-flex justify-content-center align-items-center"
-          onClick={handleCameraClick}
-          style={{ cursor: 'pointer' }}
-        >
-          {showPreview ? (
-            <img
-              id="preview"
-              src={previewUrl}
-              alt="Preview"
-              style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-            />
-          ) : (
-            <div className="upload-placeholder text-center" id="placeholder">
-              <i className="bi bi-cloud-upload fs-1 mb-2 text-muted"></i>
-              <p className="mb-0 text-muted">แตะเพื่อถ่ายรูป (มือถือ) หรืออัปโหลด</p>
-            </div>
-          )}
-        </div>
-
-        <div className="d-flex gap-2 mt-3">
-          <button
-            className="btn btn-outline-primary btn-main flex-fill"
-            type="button"
-            onClick={handleCameraClick}
-          >
-            <i className="bi bi-camera-fill me-1"></i> ถ่ายรูป
-          </button>
-          <button
-            className="btn btn-outline-secondary btn-main flex-fill"
-            type="button"
-            onClick={handleFileClick}
-          >
-            <i className="bi bi-folder2-open me-1"></i> อัปโหลดจากเครื่อง
-          </button>
-        </div>
-
-        <div className="mt-2">
-          <button
-            className="btn btn-outline-warning btn-main w-100"
-            type="button"
-            onClick={handleManualClick}
-          >
-            <i className="bi bi-pencil-square me-1"></i> บันทึกข้อมูลเอง (กรณีระบบไม่พบข้อมูลอัตโนมัติ)
-          </button>
-        </div>
-
-        <input
-          type="file"
-          accept=".png,.jpg,.jpeg,.heic,.heif"
-          capture="environment"
-          ref={cameraInputRef}
-          style={{ display: 'none' }}
-          onChange={handleCameraChange}
-        />
-        <input
-          type="file"
-          accept=".png,.jpg,.jpeg,.heic,.heif"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-        <input
-          type="file"
-          accept=".png,.jpg,.jpeg,.heic,.heif"
-          ref={manualFileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleManualFileChange}
-        />
-      </div>
-
-      {showResult && (
-        <div id="resultSection">
-          <div className="card-custom mb-3">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h6 className="fw-bold text-secondary mb-0">
-                <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
-              </h6>
-              <div className="d-flex gap-2 align-items-center">
-                {scanMethod === 'ai' && scanTime > 0 && (
-                  <span className="badge bg-info bg-opacity-10 text-info">
-                    <i className="bi bi-stopwatch me-1"></i> {scanTime} วินาที
-                  </span>
-                )}
-                <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                  {scanMethod === 'ai' ? 'ระบบอัตโนมัติ' : 'บันทึกข้อมูลเอง'}
-                </span>
-              </div>
-            </div>
-
-            <div className="row g-2">
-              <div className="col-12 mb-2">
-                <div className="form-floating">
-                  <input
-                    type="text"
-                    className="form-control fw-bold text-primary"
-                    id="room_number"
-                    placeholder="เลขห้อง"
-                    value={scanData.room_number}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="roomNumber">
-                    <i className="bi bi-house-door me-1"></i> เลขห้อง
-                  </label>
-                </div>
-              </div>
-
-              <div className="col-12 mb-2">
-                <div className="form-floating">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="recipient_name"
-                    placeholder="ชื่อผู้รับ"
-                    value={scanData.recipient_name}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="recipientName">
-                    <i className="bi bi-person me-1"></i> ชื่อผู้รับ (ตามหน้ากล่อง)
-                  </label>
-                </div>
-              </div>
-
-              <div className="col-6 mb-2">
-                <div className="form-floating">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="transport"
-                    placeholder="ขนส่ง"
-                    value={scanData.transport}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="transport">
-                    <i className="bi bi-truck me-1"></i> ขนส่ง
-                  </label>
-                </div>
-              </div>
-
-              <div className="col-6 mb-2">
-                <div className="form-floating">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="tracking_number"
-                    placeholder="Tracking"
-                    value={scanData.tracking_number}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="trackingNumber">
-                    <i className="bi bi-upc-scan me-1"></i> เลขพัสดุ
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="alert alert-light border mt-3 mb-0">
-              <small className="text-muted">
-                <i className="bi bi-info-circle-fill text-primary me-1"></i>
-                ระบบจะค้นหาเจ้าของห้องจาก <b>เลขห้อง</b> หรือ <b>ชื่อผู้รับ</b> และส่งไลน์แจ้งเตือนอัตโนมัติ
-              </small>
-            </div>
-
-            {scanData.parcel_count > 0 && (
-              <div className="d-flex align-items-center justify-content-between mt-3" id="parcelCountRow">
-                <small className="text-muted mb-0">
-                  <i className="bi bi-boxes me-1"></i> พัสดุคงค้างห้องนี้
-                </small>
-                <span className="badge bg-primary bg-opacity-10 text-primary" id="parcelCountBadge">
-                  {scanData.parcel_count} ชิ้น
-                </span>
-              </div>
-            )}
-
-            {hasScanned && !userFound.exists && (
-              <div className="alert alert-danger mt-3 mb-0 d-flex align-items-center">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                <div>
-                  <strong>ไม่พบเจ้าของห้องในระบบ</strong><br />
-                  <small>กรุณาตรวจสอบเลขห้อง/ชื่อ หรือให้ผู้ใช้ลงทะเบียนก่อน</small>
-                </div>
-              </div>
-            )}
-
-            {hasScanned && userFound.exists && (
-              <div className="alert alert-success mt-3 mb-0 d-flex align-items-center justify-content-between">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill me-2"></i>
-                  <div>
-                    <strong>พบเจ้าของห้อง</strong><br />
-                    <small>{userFound.first_name} {userFound.last_name} (ห้อง {userFound.room_number})</small>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold"
-                  onClick={handleAutofill}
-                  style={{ fontSize: '0.8rem' }}
-                  title="ใช้ชื่อและเลขห้องนี้"
-                >
-                  <i className="bi bi-clipboard-check me-1"></i> ใช้ข้อมูลนี้
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="d-grid gap-2 mb-3">
-            <button
-              className="btn btn-main btn-primary"
-              onClick={handleConfirm}
-              disabled={!userFound.exists}
-            >
-              <i className="bi bi-send-fill me-2"></i> ยืนยันและแจ้งเตือน
-            </button>
-            <button
-              className="btn btn-main btn-outline-secondary"
-              onClick={resetForm}
-            >
-              <i className="bi bi-arrow-counterclockwise me-2"></i> เริ่มใหม่
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="text-secondary fw-bold" style={{ fontSize: '0.9rem' }}>
+      <i className="bi bi-clock me-1"></i>
+      {time.toLocaleTimeString('th-TH')}
     </div>
   );
 };
 
-export default Scan;
+const RegistrationStatus = () => {
+  const { getNow } = useData();
+  const [status, setStatus] = useState({ isOpen: false, text: 'กำลังตรวจสอบ...' });
+
+  useEffect(() => {
+    const checkStatus = () => {
+      const now = getNow();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      // Open 08:00 - 17:30
+      const currentTime = hour * 60 + minute;
+      const openTime = 8 * 60 + 30;
+      const closeTime = 17 * 60 + 30;
+
+      if (currentTime >= openTime && currentTime <= closeTime) {
+        setStatus({ isOpen: true, text: '🟢 เปิดลงทะเบียนรับนอกเวลา (08:30 - 17:30)' });
+      } else {
+        setStatus({ isOpen: false, text: '🔴 ปิดลงทะเบียนรับนอกเวลา (08:30 - 17:30)' });
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [getNow]);
+
+  return (
+    <small className={`badge ${status.isOpen ? 'bg-success' : 'bg-danger'}`}>
+      {status.text}
+    </small>
+  );
+};
+
+const Parcels = () => {
+  const { parcels: allParcels, loading: globalLoading, secondaryLoading, refreshData } = useData();
+  const [parcels, setParcels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '' });
+  const [activeTab, setActiveTab] = useState('regular'); // 'regular' or 'after-hours'
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, pin: null });
+
+  // Sync loading
+  useEffect(() => {
+    setLoading(globalLoading || secondaryLoading);
+  }, [globalLoading, secondaryLoading]);
+
+  // PURE CLIENT-SIDE FILTERING (with after-hours tab support)
+  const applyFilters = useCallback((allData, search, tab) => {
+    if (!allData) return;
+    let result = [...allData];
+
+    // Filter by tab (regular vs after-hours)
+    if (tab === 'after-hours') {
+      result = result.filter(item => item.is_after_hours === true);
+    } else {
+      result = result.filter(item => !item.is_after_hours);
+    }
+
+    if (search && search.trim() !== '') {
+      const lowerTerm = search.toLowerCase().trim();
+      result = result.filter(item =>
+        (item.room_number && item.room_number.toLowerCase().includes(lowerTerm)) ||
+        (item.recipient_name && item.recipient_name.toLowerCase().includes(lowerTerm)) ||
+        (item.tracking_number && item.tracking_number.toLowerCase().includes(lowerTerm)) ||
+        (item.pin && item.pin.toLowerCase().includes(lowerTerm))
+      );
+    }
+
+    setParcels(result);
+  }, []);
+
+  // Re-run filter when data, search, or tab changes
+  useEffect(() => {
+    applyFilters(allParcels, searchTerm, activeTab);
+  }, [allParcels, searchTerm, activeTab, applyFilters]);
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+  const handleExport = () => {
+    try {
+      const exportUrl = apiService.getExportAfterHoursParcelsUrl();
+      window.open(exportUrl, '_blank');
+
+      Swal.fire({
+        icon: 'success',
+        title: 'เริ่มการดาวโหลด...',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Export ไม่สำเร็จ',
+        text: error.message
+      });
+    }
+  };
+
+  const handlePickupClick = (pin) => {
+    setConfirmModal({ isOpen: true, pin });
+  };
+
+  const handlePickup = async (pin) => {
+    setConfirmModal({ isOpen: false, pin: null });
+
+    // Optimistic UI Update - ลบออกจากรายการทันที
+    const originalParcels = [...parcels];
+    setParcels(prev => prev.filter(p => p.pin !== pin));
+
+    try {
+      await apiService.pickupParcel(pin);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'รับพัสดุสำเร็จ!',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      // ⚡ FORCE IMMEDIATE REFRESH to sync with server
+      setTimeout(() => refreshData(), 500);
+
+    } catch (error) {
+      // Revert optimistic update on error
+      setParcels(originalParcels);
+      refreshData();
+
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: error.message
+      });
+    }
+  };
+
+  return (
+    <div id="parcels">
+      <div className="card-custom mb-3">
+        <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 mb-3">
+          <div className="flex-grow-1">
+            <h5 className="mb-1">พัสดุคงค้าง</h5>
+            <small className="text-muted">รายการพัสดุที่ยังไม่รับ</small>
+            {!loading && (
+              <div className="result-count">
+                พบ {parcels.length} รายการ
+              </div>
+            )}
+          </div>
+
+          <div className="d-flex flex-column align-items-end me-3">
+            <RealTimeClock />
+            <RegistrationStatus />
+          </div>
+
+          <button
+            className="btn btn-sm btn-outline-primary"
+            onClick={() => refreshData()}
+            disabled={loading}
+          >
+            <i className="bi bi-arrow-clockwise me-1"></i>
+            {loading ? 'กำลังโหลด...' : 'รีเฟรช'}
+          </button>
+          <div style={{ maxWidth: '420px', width: '100%' }}>
+            <SearchBox
+              placeholder="ค้นหาพัสดุ..."
+              onSearch={handleSearch}
+            />
+          </div>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="d-flex gap-2 mb-3 align-items-center">
+          <div className="btn-group" role="group">
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'regular' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setActiveTab('regular')}
+            >
+              <i className="bi bi-box-seam me-1"></i>
+              ภายในเวลา
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === 'after-hours' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setActiveTab('after-hours')}
+            >
+              <i className="bi bi-moon-stars me-1"></i>
+              นอกเวลา (18:00-08:30)
+            </button>
+          </div>
+
+          {activeTab === 'after-hours' && (
+            <button
+              className="btn btn-sm btn-success ms-auto"
+              onClick={handleExport}
+              disabled={parcels.length === 0}
+            >
+              <i className="bi bi-download me-1"></i>
+              Export CSV
+            </button>
+          )}
+        </div>
+
+        <div className="table-responsive">
+          <table className="table table-hover table-parcel align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th style={{ width: '90px' }}>รูป</th>
+                <th>ห้อง</th>
+                <th>ผู้รับ</th>
+                <th>PIN</th>
+                <th>ขนส่ง</th>
+                <th>Tracking</th>
+                <th style={{ width: '100px' }}>วิธีนำเข้า</th>
+                <th style={{ width: '140px' }}>เวลาที่รับ</th>
+                <th style={{ width: '120px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="9" className="text-center text-muted">
+                    <div className="spinner-border spinner-border-sm me-2"></div>
+                    กำลังโหลดข้อมูลพัสดุ...
+                  </td>
+                </tr>
+              ) : parcels.length > 0 ? (
+                parcels.map((parcel, index) => (
+                  <tr key={parcel.id || index}>
+                    <td data-label="รูปภาพ">
+                      {parcel.image_url ? (
+                        <img
+                          src={parcel.image_url}
+                          alt="parcel"
+                          className="parcel-thumb"
+                          onClick={() => setImageModal({ isOpen: true, imageUrl: parcel.image_url })}
+                          style={{ cursor: 'zoom-in' }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="text-muted small">ไม่มีรูป</div>
+                      )}
+                    </td>
+                    <td data-label="ห้อง">{escapeHtml(parcel.room_number || '-')}</td>
+                    <td data-label="ผู้รับ">{escapeHtml(parcel.recipient_name || '-')}</td>
+                    <td data-label="รหัสรับของ" className="fw-bold text-primary text-nowrap">
+                      {escapeHtml(parcel.pin || '-')}
+                    </td>
+                    <td data-label="ขนส่ง">{escapeHtml(parcel.transport || parcel.courier || '-')}</td>
+                    <td data-label="Tracking" className="text-nowrap">{escapeHtml(parcel.tracking_number || '-')}</td>
+                    <td data-label="วิธีนำเข้า" className="text-center">
+                      {parcel.scan_method === 'manual' ? (
+                        <span className="badge bg-warning bg-opacity-10 text-warning" title="บันทึกข้อมูลเอง">
+                        บันทึกข้อมูลเอง
+                        </span>
+                      ) : (
+                        <span className="badge bg-success bg-opacity-10 text-success" title="ระบบอัตโนมัติ (AI)">
+                        ระบบอัตโนมัติ
+                        </span>
+                      )}
+                    </td>
+                    <td data-label="เวลา" className="text-nowrap small">
+                      {formatDateTime(parcel.timestamp)}
+                    </td>
+                    <td data-label="จัดการ">
+                      {activeTab !== 'after-hours' && (
+                        <button
+                          className="btn btn-success btn-sm w-100"
+                          onClick={() => handlePickupClick(parcel.pin)}
+                        >
+                          กดรับของ
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="9" className="text-center text-muted">
+                    {searchTerm ? 'ไม่พบพัสดุที่ตรงกับการค้นหา' : 'ไม่พบพัสดุคงค้าง'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      <Modal
+        isOpen={imageModal.isOpen}
+        onClose={() => setImageModal({ ...imageModal, isOpen: false })}
+        title="รูปพัสดุ"
+        type="image"
+      >
+        <img
+          src={imageModal.imageUrl}
+          alt="Parcel"
+          style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+        />
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, pin: null })}
+        onConfirm={() => handlePickup(confirmModal.pin)}
+        title="ยืนยันการรับพัสดุ"
+        message={`คุณต้องการยืนยันการรับพัสดุ PIN ${confirmModal.pin} ใช่หรือไม่?`}
+      />
+    </div>
+  );
+};
+
+export default Parcels;
