@@ -27,8 +27,9 @@ const Scan = () => {
   const [hasScanned, setHasScanned] = useState(false);
   const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
   const [manualFile, setManualFile] = useState(null); // Actual file object for manual upload
-  const [scanTime, setScanTime] = useState(null); // [NEW] Scan timestamp
+  const [scanTime, setScanTime] = useState(0); // [NEW] Time taken for AI scan in seconds
   const debounceTimerRef = useRef(null);
+  const scanStartTimeRef = useRef(null); // [NEW] Track scan start time
 
   const cameraInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -113,11 +114,12 @@ const Scan = () => {
     setUserFound({ exists: false, display_name: '', room_number: '', first_name: '', last_name: '' });
     setHasScanned(false);
     setShowResult(false);
-    setScanTime(null);
+    setScanTime(0);
 
     // Upload to API
     setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
     setLoading(true);
+    scanStartTimeRef.current = Date.now(); // Start timer
 
     try {
       // [OPTIMIZATION] Compress image before upload
@@ -130,6 +132,10 @@ const Scan = () => {
       const response = await apiService.scanImage(formData);
 
       if (response.status === 'success') {
+        // Calculate scan time
+        const elapsedTime = ((Date.now() - scanStartTimeRef.current) / 1000).toFixed(2);
+        setScanTime(parseFloat(elapsedTime));
+
         setScanData({
           room_number: response.data.room_number !== "-" ? response.data.room_number : "",
           recipient_name: response.data.recipient_name !== "-" ? response.data.recipient_name : "",
@@ -143,11 +149,6 @@ const Scan = () => {
         setUserFound(foundData);
         setHasScanned(true);
         setScanMethod('ai'); // Mark as AI scanned
-
-        // Set scan time
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-        setScanTime(timeString);
 
         if (foundData.exists) {
           // Add validation classes
@@ -212,11 +213,7 @@ const Scan = () => {
     setHasScanned(true);
     setScanMethod('manual'); // Mark as manual entry
     setManualFile(file); // Store file for later upload
-
-    // Set scan time
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    setScanTime(timeString);
+    setScanTime(0); // Reset scan time for manual
 
     setShowResult(true);
 
@@ -447,7 +444,7 @@ const Scan = () => {
       last_name: ''
     });
     setHasScanned(false);
-    setScanTime(null);
+    setScanTime(0);
 
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -556,15 +553,15 @@ const Scan = () => {
               <h6 className="fw-bold text-secondary mb-0">
                 <i className="bi bi-pencil-square me-2"></i> ตรวจสอบข้อมูล
               </h6>
-              <div className="text-end">
+              <div className="d-flex gap-2 align-items-center">
+                {scanMethod === 'ai' && scanTime > 0 && (
+                  <span className="badge bg-info bg-opacity-10 text-info">
+                    <i className="bi bi-stopwatch me-1"></i> {scanTime} วินาที
+                  </span>
+                )}
                 <span className={`badge ${scanMethod === 'ai' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
                   {scanMethod === 'ai' ? 'ระบบอัตโนมัติ' : 'บันทึกข้อมูลเอง'}
                 </span>
-                {scanTime && (
-                  <div className="text-muted mt-1" style={{ fontSize: '0.75rem' }}>
-                    <i className="bi bi-clock me-1"></i>เวลา: {scanTime} น.
-                  </div>
-                )}
               </div>
             </div>
 
