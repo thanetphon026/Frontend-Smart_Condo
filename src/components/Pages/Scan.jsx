@@ -44,8 +44,8 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800; // Optimized for Speed: 800px is sufficient for Shipping Labels 
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 1000; // Balanced: 1000px provides better detail for Handwriting while keeping speed
+          const MAX_HEIGHT = 1000;
           let width = img.width;
           let height = img.height;
 
@@ -69,7 +69,7 @@ const Scan = () => {
               type: 'image/jpeg',
               lastModified: Date.now(),
             }));
-          }, 'image/jpeg', 0.6); // 60% quality drastically reduces upload time (Speed++)
+          }, 'image/jpeg', 0.7); // 70% quality for better Handwriting clarity
         };
       };
       reader.onerror = (error) => reject(error);
