@@ -44,8 +44,8 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 900; // Even faster while maintaining Thai readability
-          const MAX_HEIGHT = 900;
+          const MAX_WIDTH = 800; // Optimized for Speed: 800px is sufficient for Shipping Labels
+          const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
 
@@ -69,7 +69,7 @@ const Scan = () => {
               type: 'image/jpeg',
               lastModified: Date.now(),
             }));
-          }, 'image/jpeg', 0.8); // 80% quality is plenty for OCR
+          }, 'image/jpeg', 0.6); // 60% quality drastically reduces upload time (Speed++)
         };
       };
       reader.onerror = (error) => reject(error);
