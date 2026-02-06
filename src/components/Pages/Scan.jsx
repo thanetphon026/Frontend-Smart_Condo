@@ -44,7 +44,7 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800; // Optimized for Speed: 800px is sufficient for Shipping Labels
+          const MAX_WIDTH = 800; // Optimized for Speed: 800px is sufficient for Shipping Labels 
           const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
