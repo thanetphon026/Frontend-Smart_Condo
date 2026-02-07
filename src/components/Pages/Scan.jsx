@@ -44,8 +44,8 @@ const Scan = () => {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1100; // Sweet Spot: 1100px balances Speed (fast upload) & Accuracy (readable handwriting)
-          const MAX_HEIGHT = 1100;
+          const MAX_WIDTH = 950;
+          const MAX_HEIGHT = 950;
           let width = img.width;
           let height = img.height;
 
@@ -69,7 +69,7 @@ const Scan = () => {
               type: 'image/jpeg',
               lastModified: Date.now(),
             }));
-          }, 'image/jpeg', 0.85); // 85% Quality: Sharpness is Key for AI to read cursive Thai
+          }, 'image/jpeg', 0.6); // 60% quality drastically reduces upload time (Speed++)
         };
       };
       reader.onerror = (error) => reject(error);
