@@ -25,7 +25,7 @@ const Scan = () => {
     last_name: ''
   });
   const [hasScanned, setHasScanned] = useState(false);
-  const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual'
+  const [scanMethod, setScanMethod] = useState('ai'); // 'ai' or 'manual' 
   const [manualFile, setManualFile] = useState(null); // Actual file object for manual upload
   const [scanTime, setScanTime] = useState(0); // Time taken for AI scan in seconds
   const debounceTimerRef = useRef(null);
