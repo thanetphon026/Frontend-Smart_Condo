@@ -7,7 +7,6 @@ import { apiService } from '../../services/api';
 import { escapeHtml, formatDateTime } from '../../utils/helpers';
 import { useData } from '../../contexts/DataContext';
 
-
 const RealTimeClock = () => {
   const { getNow } = useData();
   const [time, setTime] = useState(getNow());
