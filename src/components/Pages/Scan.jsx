@@ -166,11 +166,25 @@ const Scan = () => {
         setShowResult(true);
         // Scroll to result section
         document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        alert('AI อ่านข้อมูลไม่ได้ กรุณาลองใหม่');
       }
     } catch (error) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+      console.error('Scan Error:', error);
+      
+      if (error.message.includes('Quota Exceeded') || error.message.includes('429')) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'โควต้า AI หมดชั่วคราว',
+          text: 'ระบบ AI ของ Google Gemini มียอดการใช้งานเกินกำหนด กรุณาใช้การ "บันทึกข้อมูลเอง" หรือลองใหม่ในภายหลัง',
+          confirmButtonText: 'ตกลง',
+          footer: '<a href="https://console.cloud.google.com/" target="_blank">ตรวจสอบ Google Cloud Console</a>'
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: error.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้'
+        });
+      }
     } finally {
       setLoading(false);
     }
