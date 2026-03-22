@@ -73,8 +73,8 @@ const Parcels = () => {
 
   // PURE CLIENT-SIDE FILTERING (with after-hours tab support)
   const applyFilters = useCallback((allData, search, tab) => {
-    if (!allData) return;
-    let result = [...allData];
+    if (!allData || !Array.isArray(allData)) return;
+    let result = allData.filter(Boolean);
 
     // Filter by tab (regular vs after-hours)
     if (tab === 'after-hours') {
@@ -85,14 +85,23 @@ const Parcels = () => {
 
     if (search && search.trim() !== '') {
       const lowerTerm = search.toLowerCase().trim();
-      result = result.filter(item =>
-        (item.room_number && item.room_number.toLowerCase().includes(lowerTerm)) ||
-        (item.recipient_name && item.recipient_name.toLowerCase().includes(lowerTerm)) ||
-        (item.tracking_number && item.tracking_number.toLowerCase().includes(lowerTerm)) ||
-        (item.pin && item.pin.toLowerCase().includes(lowerTerm)) ||
-        (item.transport && item.transport.toLowerCase().includes(lowerTerm)) ||
-        (item.courier && item.courier.toLowerCase().includes(lowerTerm))
-      );
+      result = result.filter(item => {
+        if (!item) return false;
+        
+        const room = String(item.room_number || '').toLowerCase();
+        const name = String(item.recipient_name || '').toLowerCase();
+        const tracking = String(item.tracking_number || '').toLowerCase();
+        const pin = String(item.pin || '').toLowerCase();
+        const transport = String(item.transport || '').toLowerCase();
+        const courier = String(item.courier || '').toLowerCase();
+
+        return room.includes(lowerTerm) || 
+               name.includes(lowerTerm) || 
+               tracking.includes(lowerTerm) || 
+               pin.includes(lowerTerm) ||
+               transport.includes(lowerTerm) ||
+               courier.includes(lowerTerm);
+      });
     }
 
     setParcels(result);

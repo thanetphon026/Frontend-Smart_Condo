@@ -34,13 +34,17 @@ const AuditLogs = () => {
   };
 
   const filteredLogs = logs.filter(log => {
+    if (!log) return false;
     if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      (log.performed_by && log.performed_by.toLowerCase().includes(term)) ||
-      (log.action && log.action.toLowerCase().includes(term)) ||
-      (log.details && log.details.toLowerCase().includes(term))
-    );
+    
+    const term = searchTerm.toLowerCase().trim();
+    const performedBy = String(log.performed_by || '').toLowerCase();
+    const action = String(log.action || '').toLowerCase();
+    const details = String(log.details || '').toLowerCase();
+    
+    return performedBy.includes(term) || 
+           action.includes(term) || 
+           details.includes(term);
   });
 
   const getActionColor = (action) => {

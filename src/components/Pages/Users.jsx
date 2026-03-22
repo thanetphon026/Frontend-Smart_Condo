@@ -21,19 +21,29 @@ const Users = () => {
 
   // Client-side filtering
   const applyFilters = useCallback((data, term) => {
-    if (!data) return;
+    if (!data || !Array.isArray(data)) return;
+    
+    const cleanData = data.filter(Boolean);
+    
     if (!term || term.trim() === '') {
-      setUsers(data);
+      setUsers(cleanData);
       return;
     }
+
     const lowerTerm = term.toLowerCase().trim();
-    const filtered = data.filter(user =>
-      (user.room_number && user.room_number.toLowerCase().includes(lowerTerm)) ||
-      (user.name && user.name.toLowerCase().includes(lowerTerm)) ||
-      (user.display_name && user.display_name.toLowerCase().includes(lowerTerm)) ||
-      (user.phone_number && user.phone_number.toLowerCase().includes(lowerTerm)) ||
-      (user.platform && user.platform.toLowerCase().includes(lowerTerm))
-    );
+    const filtered = cleanData.filter(user => {
+      const room = String(user.room_number || '').toLowerCase();
+      const name = String(user.name || '').toLowerCase();
+      const displayName = String(user.display_name || '').toLowerCase();
+      const phone = String(user.phone_number || '').toLowerCase();
+      const platform = String(user.platform || '').toLowerCase();
+
+      return room.includes(lowerTerm) || 
+             name.includes(lowerTerm) || 
+             displayName.includes(lowerTerm) || 
+             phone.includes(lowerTerm) ||
+             platform.includes(lowerTerm);
+    });
     setUsers(filtered);
   }, []);
 
