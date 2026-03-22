@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const SearchBox = ({ 
   placeholder = 'ค้นหา...', 
@@ -9,31 +9,29 @@ const SearchBox = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [timer, setTimer] = useState(null);
-
-  const onSearchRef = React.useRef(onSearch);
+  const timerRef = useRef(null);
+  const onSearchRef = useRef(onSearch);
 
   useEffect(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
 
   useEffect(() => {
-    if (timer) clearTimeout(timer);
+    if (timerRef.current) clearTimeout(timerRef.current);
     
     if (searchTerm.trim() !== '') {
       setIsSearching(true);
-      const newTimer = setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         onSearchRef.current(searchTerm);
         setIsSearching(false);
       }, delay);
-      setTimer(newTimer);
     } else {
       onSearchRef.current('');
       setIsSearching(false);
     }
 
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [searchTerm, delay]);
 
