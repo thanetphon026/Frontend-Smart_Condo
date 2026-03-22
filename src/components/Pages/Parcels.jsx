@@ -90,7 +90,9 @@ const Parcels = () => {
         (item.room_number && item.room_number.toLowerCase().includes(lowerTerm)) ||
         (item.recipient_name && item.recipient_name.toLowerCase().includes(lowerTerm)) ||
         (item.tracking_number && item.tracking_number.toLowerCase().includes(lowerTerm)) ||
-        (item.pin && item.pin.toLowerCase().includes(lowerTerm))
+        (item.pin && item.pin.toLowerCase().includes(lowerTerm)) ||
+        (item.transport && item.transport.toLowerCase().includes(lowerTerm)) ||
+        (item.courier && item.courier.toLowerCase().includes(lowerTerm))
       );
     }
 
@@ -102,9 +104,9 @@ const Parcels = () => {
     applyFilters(allParcels, searchTerm, activeTab);
   }, [allParcels, searchTerm, activeTab, applyFilters]);
 
-  const handleSearch = (term) => {
+  const handleSearch = useCallback((term) => {
     setSearchTerm(term);
-  };
+  }, []);
 
   const handleExport = () => {
     try {

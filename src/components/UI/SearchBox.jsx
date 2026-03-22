@@ -11,24 +11,31 @@ const SearchBox = ({
   const [isSearching, setIsSearching] = useState(false);
   const [timer, setTimer] = useState(null);
 
+  const onSearchRef = React.useRef(onSearch);
+
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
   useEffect(() => {
     if (timer) clearTimeout(timer);
     
     if (searchTerm.trim() !== '') {
       setIsSearching(true);
       const newTimer = setTimeout(() => {
-        onSearch(searchTerm);
+        onSearchRef.current(searchTerm);
         setIsSearching(false);
       }, delay);
       setTimer(newTimer);
     } else {
-      onSearch('');
+      onSearchRef.current('');
+      setIsSearching(false);
     }
 
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [searchTerm, delay, onSearch]);
+  }, [searchTerm, delay]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {

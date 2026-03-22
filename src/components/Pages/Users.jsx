@@ -42,9 +42,9 @@ const Users = () => {
     applyFilters(allUsers, searchTerm);
   }, [searchTerm, allUsers, applyFilters]);
 
-  const handleSearch = (term) => {
+  const handleSearch = useCallback((term) => {
     setSearchTerm(term);
-  };
+  }, []);
 
   return (
     <div id="users">
