@@ -35,46 +35,6 @@ const Scan = () => {
   const fileInputRef = useRef(null);
   const manualFileInputRef = useRef(null);
 
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 950;
-          const MAX_HEIGHT = 950;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            resolve(new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            }));
-          }, 'image/jpeg', 0.6); // 60% quality drastically reduces upload time (Speed++)
-        };
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   const handleImageUpload = async (file) => {
     if (!file) return;
@@ -122,7 +82,9 @@ const Scan = () => {
     scanStartTimeRef.current = Date.now(); // Start timer
 
     try {
-      // ส่งไฟล์ต้นฉบับตรงๆ โดยไม่บีบอัด เพื่อให้ AI สกัดข้อความได้อย่างคมชัดและแม่นยำที่สุด (ไม่เกิน 10MB)
+      // ส่งไฟล์ภาพต้นฉบับ ไม่ย่อขนาด เพื่อให้ตัวอักษรและสระคมชัดที่สุดสำหรับ OCR (ไฟล์ไม่เกิน 10MB)
+      console.log(`Original image size: ${(file.size / (1024 * 1024)).toFixed(2)} MB (Full resolution)`);
+
       const formData = new FormData();
       formData.append('image', file);
 
