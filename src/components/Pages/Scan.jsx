@@ -117,17 +117,14 @@ const Scan = () => {
     setScanTime(0);
 
     // Upload to API
-    setLoadingText({ text: 'กำลังบีบอัดและวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
+    setLoadingText({ text: 'กำลังวิเคราะห์ภาพ...', subtext: 'AI กำลังอ่านข้อมูลหน้ากล่อง' });
     setLoading(true);
     scanStartTimeRef.current = Date.now(); // Start timer
 
     try {
-      // [OPTIMIZATION] Compress image before upload
-      const processedFile = await compressImage(file);
-      console.log(`Original: ${file.size / 1024}KB, Compressed: ${processedFile.size / 1024}KB`);
-
+      // ส่งไฟล์ต้นฉบับตรงๆ โดยไม่บีบอัด เพื่อให้ AI สกัดข้อความได้อย่างคมชัดและแม่นยำที่สุด (ไม่เกิน 10MB)
       const formData = new FormData();
-      formData.append('image', processedFile);
+      formData.append('image', file);
 
       const response = await apiService.scanImage(formData);
 
